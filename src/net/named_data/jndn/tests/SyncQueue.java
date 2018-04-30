@@ -24,7 +24,7 @@ public class SyncQueue<T> {
 		try {
 			data = (T)this.queue.poll(timeout, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE,
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE,
 				"interrupted while waiting on Q'd stuff", e);
 		}
 		return data;

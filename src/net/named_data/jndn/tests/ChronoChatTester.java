@@ -8,37 +8,52 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ChatTester extends Chat {
+public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
+	protected static Random rand = new Random();
 
-	Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
-	Map<String, Integer> testCounts = new HashMap<>();
-	int particpantNo;
-	int participants;
+	protected Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
+	protected Map<String, Integer> testCounts = new HashMap<>();
+	protected int particpantNo;
+	protected int participants;
 
-	public ChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
+	public ChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
 		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
 	}
 
+	@Override
 	public void recordMessageReceipt(String from, String msg) {
 		incMessage(from, msg);
 	}
 
-	public void incMessage(String name, String message){
+	public long getChatDelayTime() {
+		int range = 1000;
+		int interval = 10;
+		// 1 <= n <= range
+		int n = rand.nextInt(range) + 1;
+
+		//(1 * interval) ms <= chatDelayTime <= (range * interval) ms
+		long chatDelayTime = (long) n * interval;
+		return chatDelayTime;
+	}
+
+
+	private void incMessage(String name, String message){
 		if (name.contains(userName_)) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Not " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, "Not " +
 				"incrementing message to myself, it is me. I am: " +
 				userName_ + "and I " + "tried to inc message from: " + name);
 			return;
 		}
 		Map<String, Integer> testCounts = getUsersTestCountsFromUserName(name);
 		if (testCounts == null) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Asked " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, "Asked " +
 				"for participant who was not in the map, illegal call: " +
 				name);
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Valid " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, "Valid " +
 				"participants");
 
 			System.exit(1);
@@ -46,12 +61,12 @@ public class ChatTester extends Chat {
 		testCounts.put(message, testCounts.get(message) + 1);
 	}
 
-	public Map<String, Integer> getUsersTestCountsFromUserName(String name) {
+	private Map<String, Integer> getUsersTestCountsFromUserName(String name) {
 		String theKey = getUsersKeyFromUserName(name);
 		return userByMessageByMessageCount.get(theKey);
 	}
 
-	public String getUsersKeyFromUserName(String name) {
+	private String getUsersKeyFromUserName(String name) {
 		String theKey = "";
 		boolean found = false;
 		for ( String key : userByMessageByMessageCount.keySet() ) {
@@ -62,16 +77,16 @@ public class ChatTester extends Chat {
 			}
 		}
 		if (!found) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE,
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE,
 				"Couldn't find user with name: " + name);
 			System.exit(1);
 		}
 		return theKey;
 	}
 
-
+	@Override
 	public void setTestContext(ChronoChatUser cu, int numMessages, int
-		participantNo, int participants) {
+		participantNo, int participants, String baseScreenName) {
 		ArrayList<String> messages = cu.getMessages(numMessages);
 		this.particpantNo = participantNo;
 		this.participants = participants;
@@ -80,12 +95,14 @@ public class ChatTester extends Chat {
 		}
 		addUser(userName_);
 	}
+
+	@Override
 	public void updateUser(String oldName, String newName) {
-		Logger.getLogger(Chat.class.getName()).log(Level.INFO, "update user. " +
+		Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO, "update user. " +
 			"oldName" + oldName + ", new name: " + newName);
 		Map<String, Integer> testCounts = userByMessageByMessageCount.get(oldName);
 		if (testCounts == null) {
-			Logger.getLogger(Chat.class.getName()).log(Level.INFO, "need to " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO, "need to " +
 				"figure out what to do with updateUser, there was no userByMessageByMessageCount " +
 				"for them");
 			System.exit(1);
@@ -95,7 +112,8 @@ public class ChatTester extends Chat {
 
 	}
 
-	public Map<String, Integer> copyTestCounts(Map<String, Integer> oldTestCounts) {
+	private static Map<String, Integer> copyTestCounts(Map<String, Integer>
+		                                             oldTestCounts) {
 		Map<String, Integer> newTestCounts = new HashMap<>();
 		Iterator it = oldTestCounts.entrySet().iterator();
 		while (it.hasNext()) {
@@ -105,29 +123,31 @@ public class ChatTester extends Chat {
 		return newTestCounts;
 	}
 
+	@Override
 	public void addUser(String name) {
 		if (name.length() > screenName_.length()) {
 			if (userByMessageByMessageCount.get(name) == null) {
-				Logger.getLogger(Chat.class.getName()).log(Level.FINE,
+				Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,
 					"adding user:" +
 					" " + name + " within test context for " + screenName_);
 
 				Map<String, Integer> newTestCounts = copyTestCounts(testCounts);
 				userByMessageByMessageCount.put(name, newTestCounts);
-				Logger.getLogger(Chat.class.getName()).log(Level.FINE,"participant(s) " + userByMessageByMessageCount.size());
+				Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"participant(s) " + userByMessageByMessageCount.size());
 			}
 		}
 		else {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "It " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, "It " +
 				"appears a userName without a session number was almost added" +
 				" to the userByMessageByMessageCount. That username was: " + name);
 
 		}
 	}
 
+	@Override
 	public void submitStats(SyncQueue queue, int numMessages) {
 		int messagesSize = numMessages;
-		Logger.getLogger(Chat.class.getName()).log(Level.FINE,"Expected " + messagesSize + " messages");
+		Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"Expected " + messagesSize + " messages");
 
 		ArrayList<UserChatSummary> values = new ArrayList<>();
 
@@ -146,9 +166,9 @@ public class ChatTester extends Chat {
 			if (userName.contains(screenName_))
 				continue;
 
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"submitStats from within " + screenName_ + " " +
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"submitStats from within " + screenName_ + " " +
 				"for " + userName);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"reported number of unique messages: " + testCounts
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"reported number of unique messages: " + testCounts
 				.size());
 			//TODO there is a case where one unique message got recorded 0 times.
 			int currDupes = 0;
@@ -176,17 +196,16 @@ public class ChatTester extends Chat {
 				currCount += count;
 			}
 			individualResults.append(" ] ");
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE, individualResults
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO, individualResults
 				.toString());
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"");
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"count: " + currCount);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"duplicates: " + currDupes);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"numLost: " + currNumLost);
-			values.add(new UserChatSummary(userName,
-				currCount, currDupes, currNumLost));
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"");
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"count: " + currCount);
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"duplicates: " + currDupes);
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"numLost: " + currNumLost);
+
+			values.add(new UserChatSummary(userName, currCount, currDupes, currNumLost));
 		}
 
 		queue.enQ(values);
 	}
-
 }

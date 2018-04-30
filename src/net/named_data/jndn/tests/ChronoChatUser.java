@@ -5,29 +5,29 @@ import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChronoChatUser implements Runnable {
 
-	static ArrayList<String> generatedMessages = null;
-	String screenName;
-	String chatRoom;
-	String hubPrefix;
-	Face face;
-	KeyChain keyChain;
-	int participants;
-	int participantNo;
-	Name certificateName;
-	SyncQueue queue;
-	ChatTester chat;
-	int[] messagesSentCountPerUser;
-	int numMessages;
-	static Random rand = new Random();
+	protected static ArrayList<String> generatedMessages = null;
+
+	protected String screenName;
+	protected String baseScreenName;
+	protected String chatRoom;
+	protected String hubPrefix;
+	protected Face face;
+	protected KeyChain keyChain;
+	protected int participants;
+	protected int participantNo;
+	protected Name certificateName;
+	protected SyncQueue queue;
+	protected ChronoChatTest chat;
+	protected int[] messagesSentCountPerUser;
+	protected int numMessages;
 
 	public ChronoChatUser(int participantNo, int participants,
-	                      String screenName, String chatRoom, String
+	                      String baseScreenName, String chatRoom, String
 		                      hubPrefix, Face face, KeyChain keyChain,
 	                      SyncQueue queue, Name
 		                      certificateName, int[]
@@ -35,7 +35,8 @@ public class ChronoChatUser implements Runnable {
 	                      int numMessages) {
 		this.participantNo = participantNo;
 		this.participants = participants;
-		this.screenName = screenName;
+		this.baseScreenName = baseScreenName;
+		this.screenName = generateScreenName(baseScreenName, participantNo);
 		this.chatRoom = chatRoom;
 		this.hubPrefix = hubPrefix;
 		this.face = face;
@@ -58,60 +59,39 @@ public class ChronoChatUser implements Runnable {
 		return generatedMessages;
 	}
 
-	public static long getChatDelayTime() {
-		int range = 1000;
-		int interval = 10;
-		// 1 <= n <= range
-		int n = rand.nextInt(range) + 1;
-
-		//(1 * interval) ms <= chatDelayTime <= (range * interval) ms
-		long chatDelayTime = (long) n * interval;
-		return chatDelayTime;
-	}
-
-	public static void pumpFaceAwhile(Face face, long awhile) {
-		long startTime0 = System.currentTimeMillis();
-		long timeNow0 = System.currentTimeMillis();
-		while((timeNow0 - startTime0) <= awhile) {
-			timeNow0 = System.currentTimeMillis();
-			try {
-				face.processEvents();
-				Thread.sleep(10);
-			}
-			catch (Exception e) {
-				Logger.getLogger(Chat.class.getName()).log(Level.SEVERE,
-					"failed in pumpFaceAwhile", e);
-			}
-		}
-	}
-
 	public static void leave(Chat chat, Face face) {
 		// The user entered the command to leave.
 		try {
 			chat.leave();
 			// Wait a little bit to allow other applications to fetch the leave message.
-			double startTime = Chat.getNowMilliseconds();
+			double startTime = ChronoChat.getNowMilliseconds();
 			while (true) {
-				if (Chat.getNowMilliseconds() - startTime >= 1000.0)
+				if (ChronoChat.getNowMilliseconds() - startTime >= 1000.0)
 					break;
 
 				face.processEvents();
 				Thread.sleep(10);
 			}
 		} catch (Exception e) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, e);
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, null, e);
 		}
+	}
+
+	public static void pumpFaceAwhile(Face face, long awhile) {
+		ChronoChat.pumpFaceAwhile(face, awhile);
 	}
 
 	@Override
 	public void run() {
 		try {
-			this.chat = new ChatTester(screenName, chatRoom, new Name
-				(hubPrefix),	face, keyChain,
-				certificateName);
+			//this.chat = new ChronoChatTester(screenName, chatRoom,
+			// new Name(hubPrefix), face, keyChain, certificateName);
+			this.chat = new MockChronoChatTester(screenName, chatRoom,
+				new Name(hubPrefix), face, keyChain, certificateName);
+
 			chat.setTestContext(this, numMessages, participantNo,
-				participants);
-			pumpFaceAwhile(face, 5000);
+				participants, baseScreenName);
+			chat.pumpFaceAwhile(5000);
 
 			//create thread pool to
 			//1. create chats and send series of predefined messages n times then send leave command.
@@ -121,7 +101,7 @@ public class ChronoChatUser implements Runnable {
 			ArrayList<String> messages = getMessages(numMessages);
 
 			for (String m : messages) {
-				long chatDelayTime = getChatDelayTime();
+				long chatDelayTime = chat.getChatDelayTime();
 				long startTime = System.currentTimeMillis();
 				long timeNow = System.currentTimeMillis();
 
@@ -136,18 +116,21 @@ public class ChronoChatUser implements Runnable {
 						messagesSentCountPerUser[participantNo] =  totalMessagesSent;
 						sentMessage = true;
 					}
+					chat.pumpFaceAwhile(10);
+					/*
 					face.processEvents();
 
 					Thread.sleep(10);
+					*/
 					timeNow = System.currentTimeMillis();
 				}
 			}
 
 			int numMessagesEachUserMustSend = numMessages;
 			while(allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {
-				pumpFaceAwhile(face, 3000);
+				chat.pumpFaceAwhile(3000);
 			}
-			pumpFaceAwhile(face, 10000);
+			chat.pumpFaceAwhile(10000);
 			leave(chat, face);
 			chat.submitStats(queue, numMessages);
 
@@ -173,5 +156,9 @@ public class ChronoChatUser implements Runnable {
 
 		}
 		return allUsersHaveNotSentAllMessages;
+	}
+
+	public static String generateScreenName(String screenName, int i) {
+		return i + screenName + i;
 	}
 }

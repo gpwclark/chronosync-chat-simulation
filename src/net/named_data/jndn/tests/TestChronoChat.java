@@ -34,7 +34,7 @@ import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SafeBag;
 import net.named_data.jndn.util.Blob;
 
-// Define the Chat class here so that the ChronoChat demo is self-contained.
+// Define the ChronoChat class here so that the ChronoChat demo is self-contained.
 
 public class TestChronoChat {
 	// Convert the int array to a ByteBuffer.
@@ -172,22 +172,14 @@ String defaultChatRoom = "ndnchat";
 		ExecutorService executor = Executors.newFixedThreadPool
 			(participants);
 		for (int i = 0; i < participants; ++i) {
-			String newScreenName = i + screenName + i;
 			Face face = new Face(host);
-
-
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"");
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"Connecting to " + host + ", Chatroom: " +
-				", Username: " + newScreenName);
-
 			SecurityData db = getSecurityData(face);
 			ChronoChatUser.pumpFaceAwhile(face, 2000);
 
 			ChronoChatUser chronoChatUser = new ChronoChatUser(i, participants,
-				newScreenName,
-				chatRoom, hubPrefix, face, db.keyChain, resultQueue,
-				db.certificateName, messagesSentCountPerUser,
-				numMessages);
+				screenName, chatRoom, hubPrefix, face, db.keyChain, resultQueue,
+				db.certificateName, messagesSentCountPerUser, numMessages);
+
 			executor.execute(chronoChatUser);
 		}
 
@@ -202,8 +194,8 @@ String defaultChatRoom = "ndnchat";
 	}
 
 	public static class SecurityData {
-		public KeyChain keyChain;
-		public Name certificateName;
+		public final KeyChain keyChain;
+		public final Name certificateName;
 		public SecurityData(KeyChain keyChain, Name certificateName) {
 			this.keyChain = keyChain;
 			this.certificateName = certificateName;
@@ -262,8 +254,15 @@ String defaultChatRoom = "ndnchat";
 		int expectedNumUniqueChats = numParticipants * (numParticipants - 1);
 		int numUniqueChats = accumulator.getNumUniqueChats();
 
-		if (numUniqueChats != expectedNumUniqueChats)
+		if (numUniqueChats != expectedNumUniqueChats) {
+			Logger.getLogger(TestChronoChat.class.getName()).log(Level
+				.SEVERE, "Invalid experiment the number of unique chats, " +
+				numUniqueChats + ", that was recorded does not equal the " +
+				"expected number of unique chats, " + expectedNumUniqueChats +
+				". A 'unique chat' is the view a given receiver has " +
+				"of all sent messages from a different user'");
 			System.exit(1);
+		}
 	}
 
 	public static void shutDownExperiment(ExecutorService executor) {
