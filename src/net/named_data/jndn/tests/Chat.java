@@ -26,10 +26,9 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Chat implements ChronoSync2013.OnInitialized,
+public abstract class Chat implements ChronoSync2013.OnInitialized,
 		ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback {
 
-	Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
 	public Chat
 		(String screenName, String chatRoom, Name hubPrefix, Face face,
 		 KeyChain keyChain, Name certificateName)
@@ -70,6 +69,12 @@ public class Chat implements ChronoSync2013.OnInitialized,
 		}
 	}
 
+	public abstract void recordMessageReceipt(String from, String msg);
+
+	public abstract void updateUser(String oldName, String newName);
+
+	public abstract void addUser(String name);
+
 	// Send a chat message.
 	public final void
 	sendMessage(String chatMessage) throws IOException, SecurityException
@@ -83,7 +88,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 		if (!chatMessage.equals("")) {
 			sync_.publishNextSequenceNo();
 			messageCacheAppend(ChatMessage.ChatMessageType.CHAT, chatMessage);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,screenName_ + ": " + chatMessage);
+			Logger.getLogger(Chat.class.getName()).log(Level.INFO,screenName_ + ": " + chatMessage);
 		}
 	}
 
@@ -100,7 +105,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 	 * @return  The current time in milliseconds since 1/1/1970, including
 	 * fractions of a millisecond.
 	 */
-	public static double
+	 static double
 	getNowMilliseconds() { return (double)System.currentTimeMillis(); }
 
 	// initial: push the JOIN message in to the messageCache_, update roster and
@@ -109,7 +114,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 	public final void
 	onInitialized()
 	{
-		Logger.getLogger(Chat.class.getName()).log(Level.FINE,"on initialzed for...: " + screenName_);
+		Logger.getLogger(Chat.class.getName()).log(Level.INFO,"on initialzed for...: " + screenName_);
 		// Set the heartbeat timeout using the Interest timeout mechanism. The
 		// heartbeat() function will call itself again after a timeout.
 		// TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
@@ -124,8 +129,8 @@ public class Chat implements ChronoSync2013.OnInitialized,
 
 		if (roster_.indexOf(userName_) < 0) {
 			addToRoster(userName_);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"Member: " + screenName_);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,screenName_ + ": Join");
+			Logger.getLogger(Chat.class.getName()).log(Level.INFO,"Member: " + screenName_);
+			Logger.getLogger(Chat.class.getName()).log(Level.INFO,screenName_ + ": Join");
 			messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
 		}
 	}
@@ -269,7 +274,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 
 			if (l == roster_.size()) {
 				addToRoster(nameAndSession);
-				Logger.getLogger(Chat.class.getName()).log(Level.FINE,name + ": Join");
+				Logger.getLogger(Chat.class.getName()).log(Level.INFO,name + ": Join");
 			}
 
 			// Set the alive timeout using the Interest timeout mechanism.
@@ -290,36 +295,19 @@ public class Chat implements ChronoSync2013.OnInitialized,
 			//   data from an interest sent before it changed.
 			if (content.getType().equals(ChatMessage.ChatMessageType.CHAT) &&
 				!isRecoverySyncState_ && !content.getFrom().equals(screenName_)) {
-				sendMessage(content.getFrom(), content.getData());
+				recordMessageReceipt(content.getFrom(), content.getData());
 			}
 			else if (content.getType().equals(ChatMessage.ChatMessageType.LEAVE)) {
 				// leave message
 				int n = roster_.indexOf(nameAndSession);
 				if (n >= 0 && !name.equals(screenName_)) {
 					roster_.remove(n);
-					Logger.getLogger(Chat.class.getName()).log(Level.FINE,name + ": Leave");
+					Logger.getLogger(Chat.class.getName()).log(Level.INFO,name + ": Leave");
 				}
 			}
 		}
 	}
 
-	public void sendMessage(String from, String msg) {
-		incMessage(from, msg);
-	}
-
-	Map<String, Integer> testCounts = new HashMap<>();
-	int particpantNo;
-	int participants;
-	public void setTestContext(ChronoChatUser cu, int numMessages, int
-		participantNo, int participants) {
-		ArrayList<String> messages = cu.getMessages(numMessages);
-		this.particpantNo = participantNo;
-		this.participants = participants;
-		for (String m : messages) {
-			testCounts.put(m, 0);
-		}
-		addUser(userName_);
-	}
 
 	public void addToRoster(String name) {
 		roster_.add(name);
@@ -339,161 +327,10 @@ public class Chat implements ChronoSync2013.OnInitialized,
 		}
 	}
 
-	public void updateUser(String oldName, String newName) {
-		Logger.getLogger(Chat.class.getName()).log(Level.INFO, "update user. " +
-			"oldName" + oldName + ", new name: " + newName);
-		Map<String, Integer> testCounts = userByMessageByMessageCount.get(oldName);
-		if (testCounts == null) {
-			Logger.getLogger(Chat.class.getName()).log(Level.INFO, "need to " +
-				"figure out what to do with updateUser, there was no userByMessageByMessageCount " +
-				"for them");
-			System.exit(1);
-		}
-		userByMessageByMessageCount.put(newName, copyTestCounts(testCounts));
-		userByMessageByMessageCount.remove(oldName);
-
-	}
-
-	public void addUser(String name) {
-		if (name.length() > screenName_.length()) {
-			if (userByMessageByMessageCount.get(name) == null) {
-				Logger.getLogger(Chat.class.getName()).log(Level.INFO, "adding user:" +
-					" " + name + "within test context for " + screenName_);
-
-				Map<String, Integer> newTestCounts = copyTestCounts(testCounts);
-				userByMessageByMessageCount.put(name, newTestCounts);
-				Logger.getLogger(Chat.class.getName()).log(Level.FINE,"participant(s) " + userByMessageByMessageCount.size());
-			}
-		}
-		else {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "It " +
-				"appears a userName without a session number was almost added" +
-				" to the userByMessageByMessageCount. That username was: " + name);
-
-		}
-	}
-
-	public Map<String, Integer> copyTestCounts(Map<String, Integer> oldTestCounts) {
-		Map<String, Integer> newTestCounts = new HashMap<>();
-		Iterator it = oldTestCounts.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			newTestCounts.put((String)pair.getKey(), (int)pair.getValue());
-		}
-		return newTestCounts;
-	}
-
-	public void incMessage(String name, String message){
-		if (name.contains(userName_)) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Not " +
-				"incrementing message to myself, it is me. I am: " +
-				userName_ + "and I " + "tried to inc message from: " + name);
-			return;
-		}
-		Map<String, Integer> testCounts = getUsersTestCountsFromUserName(name);
-		if (testCounts == null) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Asked " +
-				"for participant who was not in the map, illegal call: " +
-				name);
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, "Valid " +
-				"participants");
-
-			System.exit(1);
-		}
-		testCounts.put(message, testCounts.get(message) + 1);
-	}
-
-	public Map<String, Integer> getUsersTestCountsFromUserName(String name) {
-		String theKey = getUsersKeyFromUserName(name);
-		return userByMessageByMessageCount.get(theKey);
-	}
-
-	public String getUsersKeyFromUserName(String name) {
-		String theKey = "";
-		boolean found = false;
-		for ( String key : userByMessageByMessageCount.keySet() ) {
-			if (key.contains(name)) {
-				theKey = key;
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			Logger.getLogger(Chat.class.getName()).log(Level.SEVERE,
-				"Couldn't find user with name: " + name);
-			System.exit(1);
-		}
-		return theKey;
-	}
-
-	public void submitStats(SyncQueue queue, int numMessages) {
-		int messagesSize = numMessages;
-		Logger.getLogger(Chat.class.getName()).log(Level.FINE,"Expected " + messagesSize + " messages");
-
-		ArrayList<UserChatSummary> values = new ArrayList<>();
-
-		int duplicates = 0;
-		int numLost = 0;
-
-		Iterator it = userByMessageByMessageCount.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry anIndividualsChatData = (Map.Entry) it.next();
-			Map<String, Integer> testCounts =
-				(Map<String, Integer>) anIndividualsChatData.getValue();
-
-			Iterator ite = testCounts.entrySet().iterator();
-
-			String userName = (String) anIndividualsChatData.getKey();
-			if (userName.contains(screenName_))
-				continue;
-
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"submitStats from within " + screenName_ + " " +
-				"for " + userName);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"reported number of unique messages: " + testCounts
-				.size());
-			//TODO there is a case where one unique message got recorded 0 times.
-			int currDupes = 0;
-			int currNumLost = 0;
-			int currCount = 0;
-			StringBuffer individualResults = new StringBuffer();
-
-			individualResults.append(" [ ");
-			while (ite.hasNext()) {
-				Map.Entry pair = (Map.Entry) ite.next();
-				int count = (int) pair.getValue();
-				if (count > 1) {
-					int newDupes = count - 1;
-					duplicates += newDupes;
-					currDupes += newDupes;
-					individualResults.append(", +" + Integer.toString(newDupes));
-				} else if (count < 1) {
-					int newNumLost = 1 - count;
-					currNumLost -= newNumLost;
-					numLost -= newNumLost;
-					individualResults.append(", -" + Integer.toString(newNumLost));
-				} else {
-					individualResults.append(", 0");
-				}
-				currCount += count;
-			}
-			individualResults.append(" ] ");
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE, individualResults
-				.toString());
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"");
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"count: " + currCount);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"duplicates: " + currDupes);
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"numLost: " + currNumLost);
-			values.add(new UserChatSummary(userName,
-				currCount, currDupes, currNumLost));
-		}
-
-		queue.enQ(values);
-	}
-
 	private static class ChatTimeout implements OnTimeout {
 		public final void
 		onTimeout(Interest interest) {
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"Timeout waiting for chat data");
+			Logger.getLogger(Chat.class.getName()).log(Level.INFO,"Timeout waiting for chat data");
 		}
 
 		public final static OnTimeout onTimeout_ = new ChatTimeout();
@@ -556,7 +393,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 			if (sequenceNo != -1 && n >= 0) {
 				if (tempSequenceNo_ == sequenceNo) {
 					roster_.remove(n);
-					Logger.getLogger(Chat.class.getName()).log(Level.FINE,name_ + ": Leave");
+					Logger.getLogger(Chat.class.getName()).log(Level.INFO,name_ + ": Leave");
 				}
 			}
 		}
@@ -606,7 +443,7 @@ public class Chat implements ChronoSync2013.OnInitialized,
 		public final void
 		onRegisterFailed(Name prefix)
 		{
-			Logger.getLogger(Chat.class.getName()).log(Level.FINE,"Register failed for prefix " + prefix.toUri());
+			Logger.getLogger(Chat.class.getName()).log(Level.INFO,"Register failed for prefix " + prefix.toUri());
 			//System.exit(1);
 		}
 
@@ -651,18 +488,19 @@ public class Chat implements ChronoSync2013.OnInitialized,
 	};
 
 	// Use a non-template ArrayList so it works with older Java compilers.
-	private final ArrayList messageCache_ = new ArrayList(); // of CachedMessage
-	private final ArrayList roster_ = new ArrayList(); // of String
-	private final int maxMessageCacheLength_ = 100;
-	private boolean isRecoverySyncState_ = true;
-	private final String screenName_;
-	private final String chatRoom_;
+	protected final ArrayList messageCache_ = new ArrayList(); // of
+	// CachedMessage
+	protected final ArrayList roster_ = new ArrayList(); // of String
+	protected final int maxMessageCacheLength_ = 100;
+	protected boolean isRecoverySyncState_ = true;
+	protected final String screenName_;
+	protected final String chatRoom_;
 	public final String userName_;
-	private final Name chatPrefix_;
-	private final double syncLifetime_ = 5000.0; // milliseconds
-	private ChronoSync2013 sync_;
-	private final Face face_;
-	private final KeyChain keyChain_;
-	private final Name certificateName_;
-	private final OnTimeout heartbeat_;
+	protected final Name chatPrefix_;
+	protected final double syncLifetime_ = 5000.0; // milliseconds
+	protected ChronoSync2013 sync_;
+	protected final Face face_;
+	protected final KeyChain keyChain_;
+	protected final Name certificateName_;
+	protected final OnTimeout heartbeat_;
 }

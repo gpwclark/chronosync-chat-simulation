@@ -176,8 +176,8 @@ String defaultChatRoom = "ndnchat";
 			Face face = new Face(host);
 
 
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"");
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"Connecting to " + host + ", Chatroom: " +
+			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"");
+			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"Connecting to " + host + ", Chatroom: " +
 				", Username: " + newScreenName);
 
 			SecurityData db = getSecurityData(face);
@@ -223,7 +223,7 @@ String defaultChatRoom = "ndnchat";
 			face.setCommandSigningInfo(keyChain, keyChain.getDefaultCertificateName());
 
 			certificateName =  keyChain.getDefaultCertificateName();
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"cert name : " + certificateName.toUri());
+			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"cert name : " + certificateName.toUri());
 		} catch (Exception e) {
 			Logger.getLogger(TestChronoChat.class.getName()).log(Level.SEVERE,
 				"Failed to initiate keychain.", e);
@@ -241,7 +241,7 @@ String defaultChatRoom = "ndnchat";
 		while (numOfUsersFinished < participants) {
 			newResults = (ArrayList<UserChatSummary>) resultQueue.deQ();
 			if (newResults != null) {
-				Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"Another participant finished " +
+				Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"Another participant finished " +
 					numOfUsersFinished);
 				++numOfUsersFinished;
 				for (UserChatSummary u : newResults) {
@@ -282,10 +282,10 @@ String defaultChatRoom = "ndnchat";
 
 	public static void printResults(int participants, int
 		numMessages, UserChatSummary accumulator) {
-		Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"Accumulated "  + accumulator.getNumUniqueChats());
 		if (accumulator.getAccumulationCount() == participants) {
 			String results = accumulator.toString();
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,results);
+			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,
+				results);
 		}
 		else {
 			Logger.getLogger(TestChronoChat.class.getName()).log(Level
@@ -293,10 +293,12 @@ String defaultChatRoom = "ndnchat";
 				"AND number of participants did not match:  count: " +
 				accumulator.getAccumulationCount() + ". " +
 				"participants " + + participants);
+			System.exit(1);
 		}
-		Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"Expected Total Count: " + UserChatSummary
+		Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,
+			"Expected Total Count: " + UserChatSummary
 			.getExpectedTotalCount(participants, numMessages));
 
-		Logger.getLogger(TestChronoChat.class.getName()).log(Level.FINE,"FIN");
+		Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"FIN");
 	}
 }

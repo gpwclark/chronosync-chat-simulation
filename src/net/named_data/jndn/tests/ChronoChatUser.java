@@ -5,8 +5,6 @@ import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +21,7 @@ public class ChronoChatUser implements Runnable {
 	int participantNo;
 	Name certificateName;
 	SyncQueue queue;
-	Chat chat;
+	ChatTester chat;
 	int[] messagesSentCountPerUser;
 	int numMessages;
 	static Random rand = new Random();
@@ -108,7 +106,8 @@ public class ChronoChatUser implements Runnable {
 	@Override
 	public void run() {
 		try {
-			this.chat = new Chat (screenName, chatRoom, new Name(hubPrefix), face, keyChain,
+			this.chat = new ChatTester(screenName, chatRoom, new Name
+				(hubPrefix),	face, keyChain,
 				certificateName);
 			chat.setTestContext(this, numMessages, participantNo,
 				participants);
