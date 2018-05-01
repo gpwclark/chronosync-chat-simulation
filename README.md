@@ -5,6 +5,9 @@ ms apart ranging anywhere from 10ms to 10,000ms.
 
 test TestChronotChat with cmd: 'mvn -q -e test -DclassName=TestChronoChat -Dparticipants=5 -DnumMessages=8'
 
+To run the "control" or mock version of the test run with optional flag:
+test TestChronotChat with cmd: 'mvn -q -e test -DclassName=TestChronoChat -Dparticipants=5 -DnumMessages=8 -DrunMock=true'
+
 5 and 8 are sample arguments.
 - participants is the number of users that will be firing messages off in
 the chronoChat room,

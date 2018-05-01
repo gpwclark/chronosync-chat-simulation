@@ -72,10 +72,19 @@ public class ChronoChatUser implements Runnable {
 	@Override
 	public void run() {
 		try {
-			//this.chat = new ChronoChatTester(screenName, chatRoom,
-			// new Name(hubPrefix), face, keyChain, certificateName);
-			this.chat = new MockChronoChatTester(screenName, chatRoom,
-				new Name(hubPrefix), face, keyChain, certificateName);
+			String testType = System.getProperty("runMock");
+			if (testType == null || !testType.equals("true")) {
+				Logger.getLogger(ChronoChatUser.class.getName()).log
+					(Level.INFO, "RUNNING REAL CHAT TEST.");
+				this.chat = new ChronoChatTester(screenName, chatRoom,
+					new Name(hubPrefix), face, keyChain, certificateName);
+			}
+			else {
+				Logger.getLogger(ChronoChatUser.class.getName()).log
+					(Level.INFO, "RUNNING MOCK CHAT TEST.");
+				this.chat = new MockChronoChatTester(screenName, chatRoom,
+					new Name(hubPrefix), face, keyChain, certificateName);
+			}
 
 			chat.setTestContext(this, numMessages, participantNo,
 				participants, baseScreenName);
@@ -105,11 +114,6 @@ public class ChronoChatUser implements Runnable {
 						sentMessage = true;
 					}
 					chat.pumpFaceAwhile(10);
-					/*
-					face.processEvents();
-
-					Thread.sleep(10);
-					*/
 					timeNow = System.currentTimeMillis();
 				}
 			}
@@ -118,7 +122,7 @@ public class ChronoChatUser implements Runnable {
 			while(allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {
 				chat.pumpFaceAwhile(3000);
 			}
-			chat.pumpFaceAwhile(10000);
+			chat.pumpFaceAwhile(15000); // for 3 sync lifetimes just to be sure.
 			leave(chat);
 			chat.submitStats(queue, numMessages);
 
@@ -147,6 +151,8 @@ public class ChronoChatUser implements Runnable {
 	}
 
 	public static String generateScreenName(String screenName, int i) {
-		return i + screenName + i;
+		int len = screenName.length();
+		int half = len / 2;
+		return i + screenName.substring(0, half) + i + screenName.substring(half) + i;
 	}
 }

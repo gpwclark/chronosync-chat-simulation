@@ -93,20 +93,17 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void recordMessageReceipt(String from, String msg) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void updateUser(String oldName, String newName) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void addUser(String name) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
 	}
 
 	@Override
@@ -117,14 +114,12 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void leave() {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void pumpFaceAwhile(long awhile) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
 	}
 
 	@Override
