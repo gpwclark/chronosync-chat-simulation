@@ -59,22 +59,10 @@ public class ChronoChatUser implements Runnable {
 		return generatedMessages;
 	}
 
-	public static void leave(Chat chat, Face face) {
+	public static void leave(Chat chat) {
 		// The user entered the command to leave.
-		try {
-			chat.leave();
-			// Wait a little bit to allow other applications to fetch the leave message.
-			double startTime = ChronoChat.getNowMilliseconds();
-			while (true) {
-				if (ChronoChat.getNowMilliseconds() - startTime >= 1000.0)
-					break;
-
-				face.processEvents();
-				Thread.sleep(10);
-			}
-		} catch (Exception e) {
-			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, null, e);
-		}
+		chat.leave();
+		chat.pumpFaceAwhile(1000);
 	}
 
 	public static void pumpFaceAwhile(Face face, long awhile) {
@@ -131,7 +119,7 @@ public class ChronoChatUser implements Runnable {
 				chat.pumpFaceAwhile(3000);
 			}
 			chat.pumpFaceAwhile(10000);
-			leave(chat, face);
+			leave(chat);
 			chat.submitStats(queue, numMessages);
 
 			if (allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {

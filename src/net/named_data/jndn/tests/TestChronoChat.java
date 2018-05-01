@@ -238,10 +238,12 @@ String defaultChatRoom = "ndnchat";
 				++numOfUsersFinished;
 				for (UserChatSummary u : newResults) {
 					++numUniqueChats;
-					if (accumulator == null)
+					if (accumulator == null) {
 						accumulator = u;
-					else
+					}
+					else {
 						accumulator.plus(u);
+					}
 				}
 			}
 		}

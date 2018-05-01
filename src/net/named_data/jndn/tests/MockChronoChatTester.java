@@ -4,12 +4,17 @@ import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MockChronoChatTester extends ChronoChatTester implements ChronoChatTest {
+
+	private String baseScreenName;
+	private ArrayList<String> messages;
+	private Map<String, Integer> sentMessageChatLog;
 
 	public MockChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
 		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
@@ -19,23 +24,43 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 	public void setTestContext(ChronoChatUser cu, int numMessages, int
 		participantNo, int participants, String baseScreenName) {
 
+		super.setTestContext(cu, numMessages, participantNo, participants, baseScreenName);
+
+		if (participantNo >= participants) {
+			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+				.SEVERE, "Invlaid participantNo: " + participantNo + ". The " +
+					"particpnatNo can't be greater than or equal to: " +
+				participants);
+				System.exit(1);
+		}
+
 		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
 			.INFO, "Mocking test data");
+		this.baseScreenName = baseScreenName;
+		this.messages = cu.getMessages(numMessages);
+		this.sentMessageChatLog = ChronoChatTester.initChatLog(messages);
 
-		Map<String, Integer> testCounts = getPerfectTestCounts(cu, numMessages);
-		//super.setTestContext(cu, numMessages, participantNo, participants, baseScreenName);
+		Map<String, Integer> aChatLog = getPerfectTestCounts();
 		for (int i = 0; i < participants; ++i) {
-			String screenName = ChronoChatUser.generateScreenName (baseScreenName, i);
+			String screenName = ChronoChatUser.generateScreenName(baseScreenName, i);
 			if (i != participantNo) {
-				userByMessageByMessageCount.put(screenName, testCounts);
+				userByMessageByMessageCount.put(screenName, aChatLog);
 			}
+		}
+
+		if (userByMessageByMessageCount.size() != (participants - 1)) {
+			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+				.SEVERE, "After mocking, the userByMessageByMessage count " +
+				"map did not have correct number of elements, needed: " +
+				numMessages + ", but had: " + userByMessageByMessageCount.size());
+			System.exit(1);
 		}
 	}
 
-	public Map<String, Integer> getPerfectTestCounts(ChronoChatUser cu,
-	                                                 int numMessages) {
+
+	public Map<String, Integer> getPerfectTestCounts() {
 		Map<String, Integer> perfectTestCounts = new HashMap<>();
-		for (String m: cu.getMessages(numMessages)) {
+		for (String m: messages) {
 			perfectTestCounts.put(m, 1);
 		}
 		return perfectTestCounts;
@@ -47,6 +72,22 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void submitStats(SyncQueue queue, int numMessages) {
+		for (String key : sentMessageChatLog.keySet()) {
+			if (sentMessageChatLog.get(key) != 1) {
+				Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+					.SEVERE, "Failed to send all messages, make sure each " +
+					"chronochat user fires off each message once.");
+				System.exit(1);
+			}
+
+		}
+
+		if (userByMessageByMessageCount.size() != (participants - 1)) {
+			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+				.SEVERE, "Do not have all users chat data.");
+			System.exit(1);
+
+		}
 		super.submitStats(queue, numMessages);
 	}
 
@@ -70,8 +111,8 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void sendMessage(String chatMessage) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
-			.INFO, "STUB!");
+		ChronoChatTester.incMessageOnLog(chatMessage, this.sentMessageChatLog);
+
 	}
 
 	@Override

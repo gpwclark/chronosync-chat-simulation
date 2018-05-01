@@ -4,6 +4,7 @@ import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,7 +17,7 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	protected static Random rand = new Random();
 
 	protected Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
-	protected Map<String, Integer> testCounts = new HashMap<>();
+	protected Map<String, Integer> aChatLog = new HashMap<>();
 	protected int particpantNo;
 	protected int participants;
 
@@ -48,8 +49,8 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 				userName_ + "and I " + "tried to inc message from: " + name);
 			return;
 		}
-		Map<String, Integer> testCounts = getUsersTestCountsFromUserName(name);
-		if (testCounts == null) {
+		Map<String, Integer> aChatLog = getUserChatLogFromUserName(name);
+		if (aChatLog == null) {
 			Logger.getLogger(ChronoChat.class.getName()).log(Level.SEVERE, "Asked " +
 				"for participant who was not in the map, illegal call: " +
 				name);
@@ -58,10 +59,14 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 
 			System.exit(1);
 		}
-		testCounts.put(message, testCounts.get(message) + 1);
+		incMessageOnLog(message, aChatLog);
 	}
 
-	private Map<String, Integer> getUsersTestCountsFromUserName(String name) {
+	public static void incMessageOnLog(String message, Map<String, Integer> aChatLog) {
+		aChatLog.put(message, aChatLog.get(message) + 1);
+	}
+
+	private Map<String, Integer> getUserChatLogFromUserName(String name) {
 		String theKey = getUsersKeyFromUserName(name);
 		return userByMessageByMessageCount.get(theKey);
 	}
@@ -88,39 +93,50 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	public void setTestContext(ChronoChatUser cu, int numMessages, int
 		participantNo, int participants, String baseScreenName) {
 		ArrayList<String> messages = cu.getMessages(numMessages);
+		this.aChatLog = initChatLog(messages);
 		this.particpantNo = participantNo;
 		this.participants = participants;
-		for (String m : messages) {
-			testCounts.put(m, 0);
-		}
+
 		addUser(userName_);
+	}
+
+	public static Map<String, Integer> initChatLog(ArrayList<String> messages) {
+		Map<String, Integer> aChatLog = new HashMap<>();
+		for (String m : messages) {
+			aChatLog.put(m, 0);
+		}
+		return aChatLog;
 	}
 
 	@Override
 	public void updateUser(String oldName, String newName) {
 		Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO, "update user. " +
 			"oldName" + oldName + ", new name: " + newName);
-		Map<String, Integer> testCounts = userByMessageByMessageCount.get(oldName);
-		if (testCounts == null) {
+		Map<String, Integer> aChatLog = userByMessageByMessageCount.get(oldName);
+		if (aChatLog == null) {
 			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO, "need to " +
 				"figure out what to do with updateUser, there was no userByMessageByMessageCount " +
 				"for them");
 			System.exit(1);
 		}
-		userByMessageByMessageCount.put(newName, copyTestCounts(testCounts));
+		userByMessageByMessageCount.put(newName, copyAChatLog(aChatLog));
 		userByMessageByMessageCount.remove(oldName);
 
 	}
 
-	private static Map<String, Integer> copyTestCounts(Map<String, Integer>
-		                                             oldTestCounts) {
-		Map<String, Integer> newTestCounts = new HashMap<>();
-		Iterator it = oldTestCounts.entrySet().iterator();
+	public static Map<String, Integer> copyAChatLog(Map<String, Integer>
+		                                                 oldChatLog) {
+		Map<String, Integer> newChatLog = new HashMap<>();
+		Iterator it = oldChatLog.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry) it.next();
-			newTestCounts.put((String)pair.getKey(), (int)pair.getValue());
+			newChatLog.put((String)pair.getKey(), (int)pair.getValue());
 		}
-		return newTestCounts;
+		return newChatLog;
+	}
+
+	public Map<String, Integer> getBlankChatLog() {
+		return copyAChatLog(aChatLog);
 	}
 
 	@Override
@@ -131,8 +147,8 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 					"adding user:" +
 					" " + name + " within test context for " + screenName_);
 
-				Map<String, Integer> newTestCounts = copyTestCounts(testCounts);
-				userByMessageByMessageCount.put(name, newTestCounts);
+				Map<String, Integer> newChatLog = copyAChatLog(aChatLog);
+				userByMessageByMessageCount.put(name, newChatLog);
 				Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"participant(s) " + userByMessageByMessageCount.size());
 			}
 		}
@@ -157,10 +173,10 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 		Iterator it = userByMessageByMessageCount.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry anIndividualsChatData = (Map.Entry) it.next();
-			Map<String, Integer> testCounts =
+			Map<String, Integer> userChatLog =
 				(Map<String, Integer>) anIndividualsChatData.getValue();
 
-			Iterator ite = testCounts.entrySet().iterator();
+			Iterator ite = userChatLog.entrySet().iterator();
 
 			String userName = (String) anIndividualsChatData.getKey();
 			if (userName.contains(screenName_))
@@ -168,7 +184,7 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 
 			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"submitStats from within " + screenName_ + " " +
 				"for " + userName);
-			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"reported number of unique messages: " + testCounts
+			Logger.getLogger(ChronoChat.class.getName()).log(Level.INFO,"reported number of unique messages: " + userChatLog
 				.size());
 			//TODO there is a case where one unique message got recorded 0 times.
 			int currDupes = 0;
