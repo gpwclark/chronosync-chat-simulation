@@ -1,3 +1,9 @@
+* note, requires NFD running on localhost.
+if you do not have one run,
+```
+./build_run_docker.sh <name-of-container>
+```
+
 This adds a feature to TestChronoChat that allows you to simulate
 'participants' users each sending 'numMessages' messages in one chronoChat
 room where each user's chronoChat messages are separated at a random number of

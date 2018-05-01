@@ -37,6 +37,8 @@ import net.named_data.jndn.util.Blob;
 // Define the ChronoChat class here so that the ChronoChat demo is self-contained.
 
 public class TestChronoChat {
+	private static final Logger log = Logger.getLogger(TestChronoChat.class.getName());
+
 	// Convert the int array to a ByteBuffer.
 	private static ByteBuffer
 	toBuffer(int[] array)
@@ -215,9 +217,9 @@ String defaultChatRoom = "ndnchat";
 			face.setCommandSigningInfo(keyChain, keyChain.getDefaultCertificateName());
 
 			certificateName =  keyChain.getDefaultCertificateName();
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"cert name : " + certificateName.toUri());
+			log.log(Level.INFO,"cert name : " + certificateName.toUri());
 		} catch (Exception e) {
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.SEVERE,
+			log.log(Level.SEVERE,
 				"Failed to initiate keychain.", e);
 		}
 
@@ -233,7 +235,7 @@ String defaultChatRoom = "ndnchat";
 		while (numOfUsersFinished < participants) {
 			newResults = (ArrayList<UserChatSummary>) resultQueue.deQ();
 			if (newResults != null) {
-				Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"Another participant finished " +
+				log.log(Level.INFO,"Another participant finished " +
 					numOfUsersFinished);
 				++numOfUsersFinished;
 				for (UserChatSummary u : newResults) {
@@ -257,7 +259,7 @@ String defaultChatRoom = "ndnchat";
 		int numUniqueChats = accumulator.getNumUniqueChats();
 
 		if (numUniqueChats != expectedNumUniqueChats) {
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level
+			log.log(Level
 				.SEVERE, "Invalid experiment the number of unique chats, " +
 				numUniqueChats + ", that was recorded does not equal the " +
 				"expected number of unique chats, " + expectedNumUniqueChats +
@@ -273,7 +275,7 @@ String defaultChatRoom = "ndnchat";
 
 		try {
 			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-				Logger.getLogger(TestChronoChat.class.getName()).log(Level.SEVERE, "Pool did not terminate");
+				log.log(Level.SEVERE, "Pool did not terminate");
 				executor.shutdownNow();
 			}
 		} catch (InterruptedException e) {
@@ -285,21 +287,21 @@ String defaultChatRoom = "ndnchat";
 		numMessages, UserChatSummary accumulator) {
 		if (accumulator.getAccumulationCount() == participants) {
 			String results = accumulator.toString();
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,
+			log.log(Level.INFO,
 				results);
 		}
 		else {
-			Logger.getLogger(TestChronoChat.class.getName()).log(Level
+			log.log(Level
 				.SEVERE, "FAILED: to test chronochat, number of results " +
 				"AND number of participants did not match:  count: " +
 				accumulator.getAccumulationCount() + ". " +
 				"participants " + + participants);
 			System.exit(1);
 		}
-		Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,
+		log.log(Level.INFO,
 			"Expected Total Count: " + UserChatSummary
 			.getExpectedTotalCount(participants, numMessages));
 
-		Logger.getLogger(TestChronoChat.class.getName()).log(Level.INFO,"FIN");
+		log.log(Level.INFO,"FIN");
 	}
 }

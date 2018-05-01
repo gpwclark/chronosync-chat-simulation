@@ -1,6 +1,7 @@
 package net.named_data.jndn.tests;
 
 class UserChatSummary {
+
 	private int totalCount;
 	private int duplicates;
 	private int numLost;

@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChronoChatUser implements Runnable {
+	private static final Logger log = Logger.getLogger(MockChronoChatTester.class.getName());
 
 	protected static ArrayList<String> generatedMessages = null;
 
@@ -74,14 +75,12 @@ public class ChronoChatUser implements Runnable {
 		try {
 			String testType = System.getProperty("runMock");
 			if (testType == null || !testType.equals("true")) {
-				Logger.getLogger(ChronoChatUser.class.getName()).log
-					(Level.INFO, "RUNNING REAL CHAT TEST.");
+				log.log(Level.INFO, "RUNNING REAL CHAT TEST.");
 				this.chat = new ChronoChatTester(screenName, chatRoom,
 					new Name(hubPrefix), face, keyChain, certificateName);
 			}
 			else {
-				Logger.getLogger(ChronoChatUser.class.getName()).log
-					(Level.INFO, "RUNNING MOCK CHAT TEST.");
+				log.log(Level.INFO, "RUNNING MOCK CHAT TEST.");
 				this.chat = new MockChronoChatTester(screenName, chatRoom,
 					new Name(hubPrefix), face, keyChain, certificateName);
 			}
@@ -127,15 +126,14 @@ public class ChronoChatUser implements Runnable {
 			chat.submitStats(queue, numMessages);
 
 			if (allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {
-				Logger.getLogger(ChronoChatUser.class.getName()).log
-					(Level.SEVERE, " Failed to conduct valid experiment. " +
+				log.log(Level.SEVERE, " Failed to conduct valid experiment. " +
 							"Not all messages were sent in chat room, " +
 							"results invalid.");
 				System.exit(1);
 			}
 
 		} catch (Exception e) {
-			Logger.getLogger(ChronoChatUser.class.getName()).log(Level.SEVERE, null, e);
+			log.log(Level.SEVERE, null, e);
 		}
 	}
 

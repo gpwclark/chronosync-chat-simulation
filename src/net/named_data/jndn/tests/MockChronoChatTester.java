@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MockChronoChatTester extends ChronoChatTester implements ChronoChatTest {
+	private static final Logger log = Logger.getLogger(MockChronoChatTester.class.getName());
 
 	private String baseScreenName;
 	private ArrayList<String> messages;
@@ -27,14 +28,14 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 		super.setTestContext(cu, numMessages, participantNo, participants, baseScreenName);
 
 		if (participantNo >= participants) {
-			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+			log.log(Level
 				.SEVERE, "Invlaid participantNo: " + participantNo + ". The " +
 					"particpnatNo can't be greater than or equal to: " +
 				participants);
 				System.exit(1);
 		}
 
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+		log.log(Level
 			.INFO, "Mocking test data");
 		this.baseScreenName = baseScreenName;
 		this.messages = cu.getMessages(numMessages);
@@ -49,7 +50,7 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 		}
 
 		if (userByMessageByMessageCount.size() != (participants - 1)) {
-			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+			log.log(Level
 				.SEVERE, "After mocking, the userByMessageByMessage count " +
 				"map did not have correct number of elements, needed: " +
 				numMessages + ", but had: " + userByMessageByMessageCount.size());
@@ -74,7 +75,7 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 	public void submitStats(SyncQueue queue, int numMessages) {
 		for (String key : sentMessageChatLog.keySet()) {
 			if (sentMessageChatLog.get(key) != 1) {
-				Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+				log.log(Level
 					.SEVERE, "Failed to send all messages, make sure each " +
 					"chronochat user fires off each message once.");
 				System.exit(1);
@@ -83,7 +84,7 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 		}
 
 		if (userByMessageByMessageCount.size() != (participants - 1)) {
-			Logger.getLogger(MockChronoChatTester.class.getName()).log(Level
+			log.log(Level
 				.SEVERE, "Do not have all users chat data.");
 			System.exit(1);
 
@@ -93,17 +94,17 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void recordMessageReceipt(String from, String msg) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
+		log.log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void updateUser(String oldName, String newName) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
+		log.log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void addUser(String name) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
+		log.log(Level .INFO, "STUB!");
 	}
 
 	@Override
@@ -114,12 +115,12 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void leave() {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
+		log.log(Level .INFO, "STUB!");
 	}
 
 	@Override
 	public void pumpFaceAwhile(long awhile) {
-		Logger.getLogger(MockChronoChatTester.class.getName()).log(Level .INFO, "STUB!");
+		log.log(Level .INFO, "STUB!");
 	}
 
 	@Override
