@@ -23,8 +23,8 @@ The delay between each user's chronoChat as they fire of numMessages is
 anywhere between 10ms and 10,000ms.
 
 Each user's thread waits for all other user threads to fire off all
-messages in chronoChat room then waits a bit to process any last incoming
-messages before terminating.
+messages in chronoChat room then waits 3 times the syncLifetime to process 
+any last incoming messages before terminating.
 
 During runtime what each user sent as well as some some of what they see print.
 At the end of each user's thread each user prints off an array of summary
