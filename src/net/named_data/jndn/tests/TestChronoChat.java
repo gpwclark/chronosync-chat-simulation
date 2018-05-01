@@ -162,8 +162,8 @@ public class TestChronoChat {
 		final int numMessages = Integer.parseInt(numMessagesInt);
 
 		String screenName = "scratchy";
-String hubPrefix = "ndn/edu/ucla/remap";
-String defaultChatRoom = "ndnchat";
+		String hubPrefix = "ndn/edu/ucla/remap";
+		String defaultChatRoom = "ndnchat";
 		String chatRoom = defaultChatRoom;
 		String host = "127.0.0.1";
 
