@@ -111,18 +111,24 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 
 	@Override
 	public void updateUser(String oldName, String newName) {
+		if (oldName.equals(newName)) {
+			log.log(Level.INFO," updateUser should not have been called, same string.");
+			return;
+		}
+
 		log.log(Level.INFO, "update user. " +
 			"oldName" + oldName + ", new name: " + newName);
 		Map<String, Integer> aChatLog = userByMessageByMessageCount.get(oldName);
-		if (aChatLog == null) {
+		if (aChatLog != null) {
+			log.log(Level.INFO, "proper use of updateUser?");
+			userByMessageByMessageCount.put(newName, copyAChatLog(aChatLog));
+			userByMessageByMessageCount.remove(oldName);
+		}
+		else {
 			log.log(Level.INFO, "need to " +
 				"figure out what to do with updateUser, there was no userByMessageByMessageCount " +
 				"for them");
-			System.exit(1);
 		}
-		userByMessageByMessageCount.put(newName, copyAChatLog(aChatLog));
-		userByMessageByMessageCount.remove(oldName);
-
 	}
 
 	public static Map<String, Integer> copyAChatLog(Map<String, Integer>
