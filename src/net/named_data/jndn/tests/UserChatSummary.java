@@ -47,11 +47,11 @@ class UserChatSummary {
 		sb.append("\n");
 		sb.append("Final Report");
 		sb.append("\n");
-		sb.append("totalCount: " + totalCount);
+		sb.append("total number of messages received by all users in the chatroom: " + totalCount);
 		sb.append("\n");
-		sb.append("duplicates: " + duplicates);
+		sb.append("total number of duplicate messages received by some user in chatroom: " + duplicates);
 		sb.append("\n");
-		sb.append("numLost: " + numLost);
+		sb.append("total number of messages some users never received: " + numLost);
 		sb.append("\n");
 		return sb.toString();
 	}
