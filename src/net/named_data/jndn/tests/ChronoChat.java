@@ -1,6 +1,7 @@
 package net.named_data.jndn.tests;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.uofantarctica.dsync.OnInitialized;
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -43,7 +44,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		int session = (int)Math.round(getNowMilliseconds() / 1000.0);
 		userName_ = screenName_ + session;
 		try {
-			sync_ = new ChronoSync2013(
+			sync_ = new ChronoSyncClassic(
 				this,
 				this,
 				chatPrefix_,
@@ -358,12 +359,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			if (messageCache_.size() == 0)
 				messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
 
-			try {
-				sync_.publishNextSequenceNo();
-			} catch (IOException | SecurityException ex) {
-				log.log(Level.SEVERE, null, ex);
-				return;
-			}
+			sync_.publishNextSequenceNo();
 			messageCacheAppend(ChatMessage.ChatMessageType.HELLO, "xxx");
 
 			// Call again.
@@ -426,9 +422,10 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	{
 		long seqNo;
 		seqNo = sync_.getSequenceNo();
+		CachedMessage cm = new CachedMessage (seqNo, messageType, message, getNowMilliseconds());
+		sync_.publishNextMessage(seqNo, messageType, message, getNowMilliseconds());
 
-		messageCache_.add(new CachedMessage
-			(seqNo, messageType, message, getNowMilliseconds()));
+		messageCache_.add(cm);
 		while (messageCache_.size() > maxMessageCacheLength_)
 			messageCache_.remove(0);
 	}
@@ -529,7 +526,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public final String userName_;
 	protected final Name chatPrefix_;
 	protected final double syncLifetime_ = 5000.0; // milliseconds
-	protected ChronoSync2013 sync_;
+	protected SyncAdapter sync_;
 	protected final Face face_;
 	protected final KeyChain keyChain_;
 	protected final Name certificateName_;

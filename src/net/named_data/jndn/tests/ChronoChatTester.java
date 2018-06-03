@@ -32,7 +32,7 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	}
 
 	public long getChatDelayTime() {
-		int range = 1000;
+		int range = 10;
 		int interval = 10;
 		// 1 <= n <= range
 		int n = rand.nextInt(range) + 1;
