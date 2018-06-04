@@ -26,6 +26,12 @@
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
 	</properties>
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>net.named-data</groupId>
@@ -42,13 +48,11 @@
 			<artifactId>protobuf-java</artifactId>
 			<version>2.6.1</version>
 		</dependency>
-        <dependency>
-            <groupId>com.uofantarctica</groupId>
-            <artifactId>dsync</artifactId>
-            <version>0.1</version>
-            <scope>system</scope>
-            <systemPath>/home/price/.m2/repository/com/uofantarctica/dsync/0.1/dsync-0.1.jar</systemPath>
-        </dependency>
+		<dependency>
+			<groupId>com.github.gpwclark</groupId>
+			<artifactId>dsync</artifactId>
+			<version>v1.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
