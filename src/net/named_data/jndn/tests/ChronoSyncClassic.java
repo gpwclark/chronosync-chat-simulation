@@ -1,6 +1,5 @@
 package net.named_data.jndn.tests;
 
-import com.uofantarctica.dsync.OnInitialized;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.OnRegisterFailed;

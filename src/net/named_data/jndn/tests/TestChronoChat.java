@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -171,8 +172,16 @@ public class TestChronoChat {
 
 		int[] messagesSentCountPerUser = new int[participants];
 
-		ExecutorService executor = Executors.newFixedThreadPool
-			(participants);
+		ExecutorService executor = Executors.newFixedThreadPool(participants,
+			new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable runnable) {
+					Thread t = new Thread(runnable);
+					t.setDaemon(true);
+					t.setName("ChronoChatUsers");
+					return t;
+				}
+			});
 		for (int i = 0; i < participants; ++i) {
 			Face face = new Face(host);
 			SecurityData db = getSecurityData(face);
@@ -188,11 +197,16 @@ public class TestChronoChat {
 		// gatherMetrics does not return until all chat users have finished
 		// sending all their chat messages and published their results to the
 		// resultQueue.
+		try {
 		UserChatSummary accumulator = gatherMetrics(participants, resultQueue);
 
 		verifyValidExperiment(accumulator, participants);
 		shutDownExperiment(executor);
 		printResults(participants, numMessages, accumulator);
+		}
+		catch (Exception e) {
+			log.log(Level.SEVERE, "error finishing simulation.");
+		}
 	}
 
 	public static class SecurityData {
@@ -233,20 +247,27 @@ public class TestChronoChat {
 		int numOfUsersFinished = 0;
 		int numUniqueChats = 0;
 		while (numOfUsersFinished < participants) {
-			newResults = (ArrayList<UserChatSummary>) resultQueue.deQ();
-			if (newResults != null) {
-				log.log(Level.INFO,"Another participant finished " +
-					numOfUsersFinished);
-				++numOfUsersFinished;
-				for (UserChatSummary u : newResults) {
-					++numUniqueChats;
-					if (accumulator == null) {
-						accumulator = u;
-					}
-					else {
-						accumulator.plus(u);
+			try {
+				newResults = (ArrayList<UserChatSummary>) resultQueue.deQ();
+				if (newResults != null) {
+					++numOfUsersFinished;
+					if (newResults.size() > 0)
+						log.log(Level.INFO, "Another participant finished " + numOfUsersFinished);
+					else
+						log.log(Level.INFO, "Another participant finished " + numOfUsersFinished +
+							" results is of size 0.");
+					for (UserChatSummary u : newResults) {
+						++numUniqueChats;
+						if (accumulator == null) {
+							accumulator = u;
+						} else {
+							accumulator.plus(u);
+						}
 					}
 				}
+			}
+			catch (Exception e) {
+				log.log(Level.SEVERE, " error in gather metrics.",e);
 			}
 		}
 		accumulator.setAccumulationStats(numOfUsersFinished, numUniqueChats);
@@ -265,7 +286,6 @@ public class TestChronoChat {
 				"expected number of unique chats, " + expectedNumUniqueChats +
 				". A 'unique chat' is the view a given receiver has " +
 				"of all sent messages from a different user'");
-			System.exit(1);
 		}
 	}
 
@@ -279,25 +299,22 @@ public class TestChronoChat {
 				executor.shutdownNow();
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, "error shutting down experiment");
 		}
 	}
 
 	public static void printResults(int participants, int
 		numMessages, UserChatSummary accumulator) {
-		if (accumulator.getAccumulationCount() == participants) {
-			String results = accumulator.toString();
-			log.log(Level.INFO,
-				results);
-		}
-		else {
+		if (accumulator.getAccumulationCount() != participants) {
 			log.log(Level
 				.SEVERE, "FAILED: to test chronochat, number of results " +
 				"AND number of participants did not match:  count: " +
 				accumulator.getAccumulationCount() + ". " +
 				"participants " + + participants);
-			System.exit(1);
 		}
+		String results = accumulator.toString();
+		log.log(Level.INFO,
+			results);
 		log.log(Level.INFO,
 			"Expected Total Count: " + UserChatSummary
 			.getExpectedTotalCount(participants, numMessages));

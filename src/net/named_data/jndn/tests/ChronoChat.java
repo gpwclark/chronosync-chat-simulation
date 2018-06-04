@@ -1,7 +1,6 @@
 package net.named_data.jndn.tests;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.uofantarctica.dsync.OnInitialized;
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -43,18 +42,25 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		chatPrefix_ = new Name(hubPrefix).append(chatRoom_).append(getRandomString());
 		int session = (int)Math.round(getNowMilliseconds() / 1000.0);
 		userName_ = screenName_ + session;
+		Name broadcastPrefix = new Name("/ndn/broadcast/ChronoChat-0.3").append(chatRoom_);
 		try {
+			if (Switches.useNewSyncImpl()) {
+				sync_ = new Sync(this, this, hubPrefix + "/" + chatRoom, broadcastPrefix.toUri(), session, face, keyChain, chatRoom,
+					screenName);
+			}
+			else {
 			sync_ = new ChronoSyncClassic(
 				this,
 				this,
 				chatPrefix_,
-				new Name("/ndn/broadcast/ChronoChat-0.3").append(chatRoom_),
+				broadcastPrefix,
 				session,
 				face,
 				keyChain,
 				certificateName,
 				syncLifetime_,
 				RegisterFailed.onRegisterFailed_);
+			}
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "failed to create ChronoSync2013 class", e);
 			System.exit(1);
@@ -258,7 +264,17 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			log.log(Level.SEVERE, null, ex);
 			return;
 		}
-		if (getNowMilliseconds() - content.getTimestamp() * 1000.0 < 120000.0) {
+		double timeNow = getNowMilliseconds();
+		int messagePublished = content.getTimestamp();
+		double diff = timeNow - messagePublished * 1000.0;
+		boolean displaying;
+		if (Switches.alwaysDisplayReceivedMessages()) {
+			displaying = true;
+		}
+		else {
+			displaying = diff < 120000.0;
+		}
+		if (displaying) {
 			String name = content.getFrom();
 			String prefix = data.getName().getPrefix(-2).toUri();
 			long sessionNo = Long.parseLong(data.getName().get(-2).toEscapedString());
@@ -303,9 +319,15 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			// isRecoverySyncState_ was set by sendInterest.
 			// TODO: If isRecoverySyncState_ changed, this assumes that we won't get
 			//   data from an interest sent before it changed.
-			if (content.getType().equals(ChatMessage.ChatMessageType.CHAT) &&
-				!isRecoverySyncState_ && !content.getFrom().equals(screenName_)) {
-				recordMessageReceipt(content.getFrom(), content.getData());
+			if (content.getType().equals(ChatMessage.ChatMessageType.CHAT) && !content.getFrom().equals(screenName_)) {
+				if (Switches.useNewSyncImpl()) {
+					recordMessageReceipt(content.getFrom(), content.getData());
+				}
+				else {
+					if (!isRecoverySyncState_) {
+						recordMessageReceipt(content.getFrom(), content.getData());
+					}
+				}
 			}
 			else if (content.getType().equals(ChatMessage.ChatMessageType.LEAVE)) {
 				// leave message
