@@ -29,7 +29,12 @@ public class Sync implements SyncAdapter {
 
 	@Override
 	public void publishNextMessage(long seqNo, ChatbufProto.ChatMessage.ChatMessageType messageType, String message, double time) {
-		dsync.publishNextMessage(seqNo, messageType, message, time);
+		String messageTypeStr = getStringVersionOfMessageType(messageType);
+		dsync.publishNextMessage(seqNo, messageTypeStr, message, time);
+	}
+
+	public String getStringVersionOfMessageType(ChatbufProto.ChatMessage.ChatMessageType type) {
+		return type.toString();
 	}
 
 	@Override
