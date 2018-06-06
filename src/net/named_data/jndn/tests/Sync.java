@@ -1,6 +1,7 @@
 package net.named_data.jndn.tests;
 
 import com.uofantarctica.dsync.DSync;
+import com.uofantarctica.dsync.model.ReturnStrategy;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.OnData;
 import net.named_data.jndn.security.KeyChain;
@@ -16,6 +17,7 @@ public class Sync implements SyncAdapter {
 
 	public Sync(OnData onData, ChronoSync2013.OnInitialized onInitialized, String dataPrefix, String broadcastPrefix, int
 		session, Face face, KeyChain keyChain, String chatRoom, String screenName) {
+		ReturnStrategy strategy = ReturnStrategy.ALL;
 		dsync = new DSync(onData,
 			onInitialized,
 			dataPrefix,
@@ -24,7 +26,8 @@ public class Sync implements SyncAdapter {
 			face,
 			keyChain,
 			chatRoom,
-			screenName);
+			screenName,
+			strategy);
 	}
 
 	@Override
