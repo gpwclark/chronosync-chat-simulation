@@ -1,4 +1,4 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
 public class Switches {
 	public static boolean useNewSyncImpl() {

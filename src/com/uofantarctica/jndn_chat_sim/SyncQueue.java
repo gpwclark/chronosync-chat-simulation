@@ -1,4 +1,4 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;

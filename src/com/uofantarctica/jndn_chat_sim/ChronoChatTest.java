@@ -1,4 +1,4 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
 public interface ChronoChatTest extends Chat {
 	void setTestContext(ChronoChatUser cu, int numMessages, int

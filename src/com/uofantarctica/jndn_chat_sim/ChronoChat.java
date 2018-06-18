@@ -1,6 +1,7 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -13,7 +14,6 @@ import net.named_data.jndn.OnTimeout;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.sync.ChronoSync2013;
-import net.named_data.jndn.tests.ChatbufProto.ChatMessage;
 import net.named_data.jndn.util.Blob;
 
 import java.io.IOException;
@@ -29,8 +29,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 
 	public ChronoChat
 		(String screenName, String chatRoom, Name hubPrefix, Face face,
-		 KeyChain keyChain, Name certificateName)
-	{
+		 KeyChain keyChain, Name certificateName, SyncAdapter sync_) {
 		screenName_ = screenName;
 		chatRoom_ = chatRoom;
 		face_ = face;
@@ -40,33 +39,8 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 
 		// This should only be called once, so get the random string here.
 		chatPrefix_ = new Name(hubPrefix).append(chatRoom_).append(getRandomString());
-		int session = (int)Math.round(getNowMilliseconds() / 1000.0);
-		userName_ = screenName_ + session;
-		Name broadcastPrefix = new Name("/ndn/broadcast/ChronoChat-0.3").append(chatRoom_);
-		try {
-			if (Switches.useNewSyncImpl()) {
-				sync_ = new Sync(this, this, hubPrefix + "/" + chatRoom, broadcastPrefix.toUri(), session, face, keyChain, chatRoom,
-					screenName);
-			}
-			else {
-			sync_ = new ChronoSyncClassic(
-				this,
-				this,
-				chatPrefix_,
-				broadcastPrefix,
-				session,
-				face,
-				keyChain,
-				certificateName,
-				syncLifetime_,
-				RegisterFailed.onRegisterFailed_);
-			}
-		} catch (Exception e) {
-			log.log(Level.SEVERE, "failed to create ChronoSync2013 class", e);
-			System.exit(1);
-			return;
-		}
-
+		userName_ = screenName_ + sync_.getSessionNo();
+		sync_.initSyncForDataSet(this, this, chatRoom, screenName);
 		try {
 			face.registerPrefix(chatPrefix_, this, RegisterFailed.onRegisterFailed_);
 		} catch (IOException | SecurityException ex) {
@@ -87,7 +61,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public void
 	sendMessage(String chatMessage) {
 		if (messageCache_.size() == 0) {
-			messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
+			messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.JOIN, "xxx");
 		}
 
 		// Ignore an empty message.
@@ -95,7 +69,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		try {
 			if (!chatMessage.equals("")) {
 				sync_.publishNextSequenceNo();
-				messageCacheAppend(ChatMessage.ChatMessageType.CHAT, chatMessage);
+				messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.CHAT, chatMessage);
 				log.log(Level.INFO,screenName_ + ": " + chatMessage);
 			}
 		}
@@ -109,7 +83,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public void leave() {
 		try {
 			sync_.publishNextSequenceNo();
-			messageCacheAppend(ChatMessage.ChatMessageType.LEAVE, "xxx");
+			messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.LEAVE, "xxx");
 		}
 		catch (Exception e) {
 			log.log(Level.SEVERE, null, e);
@@ -147,7 +121,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			addToRoster(userName_);
 			log.log(Level.INFO,"Member: " + screenName_);
 			log.log(Level.INFO,screenName_ + ": Join");
-			messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
+			//messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.JOIN, "xxx");
 		}
 	}
 
@@ -209,13 +183,13 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	(Name prefix, Interest interest, Face face, long interestFilterId,
 	 InterestFilter filter)
 	{
-		ChatMessage.Builder builder = ChatMessage.newBuilder();
+		ChatbufProto.ChatMessage.Builder builder = ChatbufProto.ChatMessage.newBuilder();
 		long sequenceNo = Long.parseLong(interest.getName().get(chatPrefix_.size() + 1).toEscapedString());
 		boolean gotContent = false;
 		for (int i = messageCache_.size() - 1; i >= 0; --i) {
 			CachedMessage message = (CachedMessage)messageCache_.get(i);
 			if (message.getSequenceNo() == sequenceNo) {
-				if (!message.getMessageType().equals(ChatMessage.ChatMessageType.CHAT)) {
+				if (!message.getMessageType().equals(ChatbufProto.ChatMessage.ChatMessageType.CHAT)) {
 					builder.setFrom(screenName_);
 					builder.setTo(chatRoom_);
 					builder.setType(message.getMessageType());
@@ -234,7 +208,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		}
 
 		if (gotContent) {
-			ChatMessage content = builder.build();
+			ChatbufProto.ChatMessage content = builder.build();
 			byte[] array = content.toByteArray();
 			Data data = new Data(interest.getName());
 			data.setContent(new Blob(array, false));
@@ -257,9 +231,9 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public final void
 	onData(Interest interest, Data data)
 	{
-		ChatMessage content;
+		ChatbufProto.ChatMessage content;
 		try {
-			content = ChatMessage.parseFrom(data.getContent().getImmutableArray());
+			content = ChatbufProto.ChatMessage.parseFrom(data.getContent().getImmutableArray());
 		} catch (InvalidProtocolBufferException ex) {
 			log.log(Level.SEVERE, null, ex);
 			return;
@@ -287,7 +261,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 				String entry = (String)roster_.get(l);
 				String tempName = entry.substring(0, entry.length() - 10);
 				long tempSessionNo = Long.parseLong(entry.substring(entry.length() - 10));
-				if (!name.equals(tempName) && !content.getType().equals(ChatMessage.ChatMessageType.LEAVE))
+				if (!name.equals(tempName) && !content.getType().equals(ChatbufProto.ChatMessage.ChatMessageType.LEAVE))
 					++l;
 				else {
 					if (name.equals(tempName) && sessionNo > tempSessionNo) {
@@ -319,7 +293,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			// isRecoverySyncState_ was set by sendInterest.
 			// TODO: If isRecoverySyncState_ changed, this assumes that we won't get
 			//   data from an interest sent before it changed.
-			if (content.getType().equals(ChatMessage.ChatMessageType.CHAT) && !content.getFrom().equals(screenName_)) {
+			if (content.getType().equals(ChatbufProto.ChatMessage.ChatMessageType.CHAT) && !content.getFrom().equals(screenName_)) {
 				if (Switches.useNewSyncImpl()) {
 					recordMessageReceipt(content.getFrom(), content.getData());
 				}
@@ -329,7 +303,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 					}
 				}
 			}
-			else if (content.getType().equals(ChatMessage.ChatMessageType.LEAVE)) {
+			else if (content.getType().equals(ChatbufProto.ChatMessage.ChatMessageType.LEAVE)) {
 				// leave message
 				int n = roster_.indexOf(nameAndSession);
 				if (n >= 0 && !name.equals(screenName_)) {
@@ -379,10 +353,10 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		public final void
 		onTimeout(Interest interest) {
 			if (messageCache_.size() == 0)
-				messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
+				messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.JOIN, "xxx");
 
 			sync_.publishNextSequenceNo();
-			messageCacheAppend(ChatMessage.ChatMessageType.HELLO, "xxx");
+			messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.HELLO, "xxx");
 
 			// Call again.
 			// TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
@@ -440,12 +414,12 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	 * the size to maxMessageCacheLength_.
 	 */
 	private void
-	messageCacheAppend(ChatMessage.ChatMessageType messageType, String message)
+	messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType messageType, String message)
 	{
 		long seqNo;
 		seqNo = sync_.getSequenceNo();
 		CachedMessage cm = new CachedMessage (seqNo, messageType, message, getNowMilliseconds());
-		sync_.publishNextMessage(seqNo, messageType, message, getNowMilliseconds());
+		sync_.publishNextMessage(seqNo, messageType.toString(), message, getNowMilliseconds());
 
 		messageCache_.add(cm);
 		while (messageCache_.size() > maxMessageCacheLength_)
@@ -490,7 +464,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 
 	private static class CachedMessage {
 		public CachedMessage
-			(long sequenceNo, ChatMessage.ChatMessageType messageType, String message, double time)
+			(long sequenceNo, ChatbufProto.ChatMessage.ChatMessageType messageType, String message, double time)
 		{
 			sequenceNo_ = sequenceNo;
 			messageType_ = messageType;
@@ -501,7 +475,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		public final long
 		getSequenceNo() { return sequenceNo_; }
 
-		public final ChatMessage.ChatMessageType
+		public final ChatbufProto.ChatMessage.ChatMessageType
 		getMessageType() { return messageType_; }
 
 		public final String
@@ -511,7 +485,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		getTime() { return time_; }
 
 		private final long sequenceNo_;
-		private final ChatMessage.ChatMessageType messageType_;
+		private final ChatbufProto.ChatMessage.ChatMessageType messageType_;
 		private final String message_;
 		private final double time_;
 	};

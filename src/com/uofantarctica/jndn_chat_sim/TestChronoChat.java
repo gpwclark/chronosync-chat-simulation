@@ -18,8 +18,9 @@
  * A copy of the GNU Lesser General Public License is in the file COPYING.
  */
 
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.uofantarctica.dsync.DSync;
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
@@ -45,11 +48,13 @@ public class TestChronoChat {
 	toBuffer(int[] array)
 	{
 		ByteBuffer result = ByteBuffer.allocate(array.length);
+		Buffer resultBuffer;
 		for (int i = 0; i < array.length; ++i)
 			result.put((byte)(array[i] & 0xff));
 
-		result.flip();
-		return result;
+		resultBuffer = result;
+		resultBuffer.flip();
+		return (ByteBuffer)resultBuffer;
 	}
 
 	private static final ByteBuffer DEFAULT_RSA_PUBLIC_KEY_DER = toBuffer(new int[] {
@@ -158,38 +163,62 @@ public class TestChronoChat {
 	public static void
 	main(String[] args) {
 		String participantInt = System.getProperty("participants");
-		final int participants = Integer.parseInt(participantInt);
 		String numMessagesInt = System.getProperty("numMessages");
-		final int numMessages = Integer.parseInt(numMessagesInt);
+		int participants;
+		int numMessages;
 
+		if (participantInt == null || participantInt.equals("")) {
+			participants = 10;
+		}
+		else {
+			participants = Integer.parseInt(participantInt);
+		}
+
+		if (participantInt == null || participantInt.equals("")) {
+			numMessages = 10;
+		}
+		else {
+			numMessages = Integer.parseInt(numMessagesInt);
+		}
+
+		simulate(participants, numMessages);
+	}
+
+	public static UserChatSummary simulate(int participants, int numMessages) {
+		String host = "127.0.0.1";
 		String screenName = "scratchy";
 		String hubPrefix = "ndn/edu/ucla/remap";
-		String defaultChatRoom = "ndnchat";
-		String chatRoom = defaultChatRoom;
-		String host = "127.0.0.1";
+		String chatRoom = "ndnchat";
+		String broadcastPrefix = "/ndn/broadcast/ChronoChat-0.3";
 
 		SyncQueue<ArrayList<UserChatSummary>> resultQueue = new SyncQueue<>(5);
 
 		int[] messagesSentCountPerUser = new int[participants];
 
 		ExecutorService executor = Executors.newFixedThreadPool(participants,
-			new ThreadFactory() {
-				@Override
-				public Thread newThread(Runnable runnable) {
-					Thread t = new Thread(runnable);
-					t.setDaemon(true);
-					t.setName("ChronoChatUsers");
-					return t;
-				}
-			});
+				new ThreadFactory() {
+					@Override
+					public Thread newThread(Runnable runnable) {
+						Thread t = new Thread(runnable);
+						t.setDaemon(true);
+						t.setName("ChronoChatUsers");
+						return t;
+					}
+				});
 		for (int i = 0; i < participants; ++i) {
 			Face face = new Face(host);
 			SecurityData db = getSecurityData(face);
 			ChronoChatUser.pumpFaceAwhile(face, 2000);
 
+			SyncAdapter sync = new DSync(
+				hubPrefix,
+				broadcastPrefix,
+				face,
+				db.keyChain);
+
 			ChronoChatUser chronoChatUser = new ChronoChatUser(i, participants,
-				screenName, chatRoom, hubPrefix, face, db.keyChain, resultQueue,
-				db.certificateName, messagesSentCountPerUser, numMessages);
+					screenName, chatRoom, hubPrefix, face, db.keyChain, resultQueue,
+					db.certificateName, messagesSentCountPerUser, numMessages, sync);
 
 			executor.execute(chronoChatUser);
 		}
@@ -198,14 +227,13 @@ public class TestChronoChat {
 		// sending all their chat messages and published their results to the
 		// resultQueue.
 		try {
-		UserChatSummary accumulator = gatherMetrics(participants, resultQueue);
-
-		verifyValidExperiment(accumulator, participants);
-		shutDownExperiment(executor);
-		printResults(participants, numMessages, accumulator);
+			UserChatSummary accumulator = gatherMetrics(participants, resultQueue);
+			shutDownExperiment(executor);
+			return accumulator;
 		}
 		catch (Exception e) {
 			log.log(Level.SEVERE, "error finishing simulation.");
+			throw e;
 		}
 	}
 
@@ -218,7 +246,7 @@ public class TestChronoChat {
 		}
 	}
 
-	public static SecurityData getSecurityData(Face face) {
+	private static SecurityData getSecurityData(Face face) {
 		KeyChain keyChain = null;
 		Name certificateName = null;
 
@@ -240,7 +268,7 @@ public class TestChronoChat {
 		return new SecurityData(keyChain, certificateName);
 	}
 
-	public static UserChatSummary gatherMetrics(int participants, SyncQueue
+	private static UserChatSummary gatherMetrics(int participants, SyncQueue
 		resultQueue) {
 		UserChatSummary accumulator = null;
 		ArrayList<UserChatSummary> newResults;
@@ -274,22 +302,7 @@ public class TestChronoChat {
 		return accumulator;
 	}
 
-	private static void verifyValidExperiment(UserChatSummary accumulator,
-	                                          int numParticipants) {
-		int expectedNumUniqueChats = numParticipants * (numParticipants - 1);
-		int numUniqueChats = accumulator.getNumUniqueChats();
-
-		if (numUniqueChats != expectedNumUniqueChats) {
-			log.log(Level
-				.SEVERE, "Invalid experiment the number of unique chats, " +
-				numUniqueChats + ", that was recorded does not equal the " +
-				"expected number of unique chats, " + expectedNumUniqueChats +
-				". A 'unique chat' is the view a given receiver has " +
-				"of all sent messages from a different user'");
-		}
-	}
-
-	public static void shutDownExperiment(ExecutorService executor) {
+	private static void shutDownExperiment(ExecutorService executor) {
 		//make sure we shut down executor
 		executor.shutdown();
 
@@ -303,22 +316,44 @@ public class TestChronoChat {
 		}
 	}
 
+	public static boolean verifyValidExperiment(UserChatSummary accumulator,
+	                                          int numParticipants,
+																							int numMessages) {
+		int expectedNumUniqueChats = numParticipants * (numParticipants - 1);
+		int numUniqueChats = accumulator.getNumUniqueChats();
+		boolean validExperiment = true;
+
+		if (numUniqueChats != expectedNumUniqueChats) {
+			log.log(Level
+				.SEVERE, "Invalid experiment the number of unique chats, " +
+				numUniqueChats + ", that was recorded does not equal the " +
+				"expected number of unique chats, " + expectedNumUniqueChats +
+				". A 'unique chat' is the view a given receiver has " +
+				"of all sent messages from a different user'");
+			validExperiment = false;
+		}
+		if (accumulator.getNumUsersFinished() != numParticipants) {
+			log.log(Level
+					.SEVERE, "FAILED: to test chronochat, number of results " +
+					"AND number of participants did not match:  count: " +
+					accumulator.getNumUsersFinished() + ". " +
+					"participants " + + numParticipants);
+			validExperiment = false;
+		}
+		int expectedTotalCount =
+			UserChatSummary.getExpectedTotalCount(numParticipants, numMessages);
+		if (expectedTotalCount != accumulator.getTotalCount()) {
+			validExperiment = false;
+		}
+		return validExperiment;
+	}
+
 	public static void printResults(int participants, int
 		numMessages, UserChatSummary accumulator) {
-		if (accumulator.getAccumulationCount() != participants) {
-			log.log(Level
-				.SEVERE, "FAILED: to test chronochat, number of results " +
-				"AND number of participants did not match:  count: " +
-				accumulator.getAccumulationCount() + ". " +
-				"participants " + + participants);
-		}
 		String results = accumulator.toString();
-		log.log(Level.INFO,
-			results);
-		log.log(Level.INFO,
-			"Expected Total Count: " + UserChatSummary
+		log.log(Level.INFO, results);
+		log.log(Level.INFO, "Expected Total Count: " + UserChatSummary
 			.getExpectedTotalCount(participants, numMessages));
-
 		log.log(Level.INFO,"FIN");
 	}
 }

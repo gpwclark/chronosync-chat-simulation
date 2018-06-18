@@ -1,7 +1,9 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
+import net.named_data.jndn.OnData;
 import net.named_data.jndn.OnRegisterFailed;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SecurityException;
@@ -46,7 +48,8 @@ public class ChronoSyncClassic implements SyncAdapter {
 	}
 
 	@Override
-	public void publishNextMessage(long seqNo, ChatbufProto.ChatMessage.ChatMessageType messageType, String message, double time) {
+	public void publishNextMessage(long l, String s, String s1, double v) {
+
 	}
 
 	@Override
@@ -69,5 +72,15 @@ public class ChronoSyncClassic implements SyncAdapter {
 	@Override
 	public long getSequenceNo() {
 		return sync_.getSequenceNo();
+	}
+
+	@Override
+	public long getSessionNo() {
+		return 0;
+	}
+
+	@Override
+	public void initSyncForDataSet(OnData onData, ChronoSync2013.OnInitialized onInitialized, String s, String s1) {
+
 	}
 }

@@ -1,5 +1,6 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
@@ -22,8 +23,10 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	protected int particpantNo;
 	protected int participants;
 
-	public ChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
-		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
+	public ChronoChatTester(String screenName, String chatRoom,
+													Name hubPrefix, Face face, KeyChain keyChain,
+													Name certificateName, SyncAdapter sync) {
+		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName, sync);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
@@ -17,8 +18,9 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 	private ArrayList<String> messages;
 	private Map<String, Integer> sentMessageChatLog;
 
-	public MockChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
-		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
+	public MockChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name
+		certificateName, SyncAdapter sync) {
+		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName, sync);
 	}
 
 	@Override
@@ -39,7 +41,7 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 			.INFO, "Mocking test data");
 		this.baseScreenName = baseScreenName;
 		this.messages = cu.getMessages(numMessages);
-		this.sentMessageChatLog = ChronoChatTester.initChatLog(messages);
+		this.sentMessageChatLog = initChatLog(messages);
 
 		Map<String, Integer> aChatLog = getPerfectTestCounts();
 		for (int i = 0; i < participants; ++i) {
@@ -109,7 +111,7 @@ public class MockChronoChatTester extends ChronoChatTester implements ChronoChat
 
 	@Override
 	public void sendMessage(String chatMessage) {
-		ChronoChatTester.incMessageOnLog(chatMessage, this.sentMessageChatLog);
+		incMessageOnLog(chatMessage, this.sentMessageChatLog);
 
 	}
 

@@ -1,5 +1,6 @@
-package net.named_data.jndn.tests;
+package com.uofantarctica.jndn_chat_sim;
 
+import com.uofantarctica.dsync.model.SyncAdapter;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
@@ -26,14 +27,12 @@ public class ChronoChatUser implements Runnable {
 	protected ChronoChatTest chat;
 	protected int[] messagesSentCountPerUser;
 	protected int numMessages;
+	protected SyncAdapter sync;
 
-	public ChronoChatUser(int participantNo, int participants,
-	                      String baseScreenName, String chatRoom, String
-		                      hubPrefix, Face face, KeyChain keyChain,
-	                      SyncQueue queue, Name
-		                      certificateName, int[]
-		                      messagesSentCountPerUser,
-	                      int numMessages) {
+	public ChronoChatUser(int participantNo, int participants, String baseScreenName,
+												String chatRoom, String hubPrefix, Face face, KeyChain keyChain,
+	                      SyncQueue queue, Name certificateName, int[] messagesSentCountPerUser,
+	                      int numMessages, SyncAdapter sync) {
 		this.participantNo = participantNo;
 		this.participants = participants;
 		this.baseScreenName = baseScreenName;
@@ -46,6 +45,7 @@ public class ChronoChatUser implements Runnable {
 		this.certificateName = certificateName;
 		this.messagesSentCountPerUser = messagesSentCountPerUser;
 		this.numMessages = numMessages;
+		this.sync = sync;
 	}
 
 	public static ArrayList<String> getMessages(int numMessages) {
@@ -77,12 +77,12 @@ public class ChronoChatUser implements Runnable {
 			if (testType == null || !testType.equals("true")) {
 				log.log(Level.INFO, "RUNNING REAL CHAT TEST.");
 				this.chat = new ChronoChatTester(screenName, chatRoom,
-					new Name(hubPrefix), face, keyChain, certificateName);
+					new Name(hubPrefix), face, keyChain, certificateName, sync);
 			}
 			else {
 				log.log(Level.INFO, "RUNNING MOCK CHAT TEST.");
 				this.chat = new MockChronoChatTester(screenName, chatRoom,
-					new Name(hubPrefix), face, keyChain, certificateName);
+					new Name(hubPrefix), face, keyChain, certificateName, sync);
 			}
 
 			chat.setTestContext(this, numMessages, participantNo,
