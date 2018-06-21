@@ -22,7 +22,11 @@ package com.uofantarctica.jndn_chat_sim;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -181,7 +185,7 @@ public class TestChronoChat {
 			numMessages = Integer.parseInt(numMessagesInt);
 		}
 
-		simulate(participants, numMessages);
+		//simulate(participants, numMessages);
 	}
 
 	public static UserChatSummary simulate(int participants, int numMessages) {

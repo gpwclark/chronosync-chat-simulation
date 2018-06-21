@@ -65,11 +65,10 @@
 			<systemPath>/home/price/.m2/repository/com/uofantarctica/dsync/1.4/dsync-1.4.jar</systemPath>
 		</dependency>
 	</dependencies>
-	<!--
-<build>
+    <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
-        run a specific class when invoked with 'mvn -q test -DclassName=...'
+        <!--run a specific class when invoked with 'mvn -q test -DclassName=...'-->
         <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
@@ -81,7 +80,7 @@
                         <goal>java</goal>
                     </goals>
                     <configuration>
-                        <mainClass>net.named_data.jndn_chat_simim.TestChronoChat</mainClass>
+                        <mainClass>com.uofantarctica.jndn_chat_sim.TestChronoChat</mainClass>
                         <arguments></arguments>
                     </configuration>
                 </execution>
@@ -89,5 +88,4 @@
         </plugin>
     </plugins>
 	</build>
--->
 </project>

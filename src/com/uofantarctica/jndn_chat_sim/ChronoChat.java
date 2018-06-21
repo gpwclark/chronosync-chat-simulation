@@ -58,8 +58,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public abstract void addUser(String name);
 
 	@Override
-	public void
-	sendMessage(String chatMessage) {
+	public void sendMessage(String chatMessage) {
 		if (messageCache_.size() == 0) {
 			messageCacheAppend(ChatbufProto.ChatMessage.ChatMessageType.JOIN, "xxx");
 		}
