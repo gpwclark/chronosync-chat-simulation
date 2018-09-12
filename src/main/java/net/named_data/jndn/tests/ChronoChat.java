@@ -1,6 +1,7 @@
 package net.named_data.jndn.tests;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.uofantarctica.dsync.model.ChatMessageBox;
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -445,7 +446,13 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		long seqNo;
 		seqNo = sync_.getSequenceNo();
 		CachedMessage cm = new CachedMessage (seqNo, messageType, message, getNowMilliseconds());
-		sync_.publishNextMessage(seqNo, messageType, message, getNowMilliseconds());
+
+		com.uofantarctica.dsync.model.ChatbufProto.ChatMessage.Builder builder =
+				com.uofantarctica.dsync.model.ChatbufProto.ChatMessage.newBuilder();
+		ChatMessageBox.buildMessage(builder, userName_, chatRoom_, com.uofantarctica.dsync.model.ChatbufProto.ChatMessage.ChatMessageType.CHAT, message, getNowMilliseconds());
+		Data newData = new Data();
+		newData.setContent(new Blob(builder.build().toByteArray()));
+		sync_.publishNextMessage(newData);
 
 		messageCache_.add(cm);
 		while (messageCache_.size() > maxMessageCacheLength_)

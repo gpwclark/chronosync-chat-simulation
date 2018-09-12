@@ -27,6 +27,14 @@ class UserChatSummary {
 		return (participants - 1) * numMessages * participants;
 	}
 
+	public static int getExpectedNumUniqueChats(int participants) {
+		return (participants - 1) * participants;
+	}
+
+	public int getTotalCount() {
+		return totalCount;
+	}
+
 	public void plus(UserChatSummary toAdd) {
 		totalCount += toAdd.totalCount;
 		duplicates += toAdd.duplicates;

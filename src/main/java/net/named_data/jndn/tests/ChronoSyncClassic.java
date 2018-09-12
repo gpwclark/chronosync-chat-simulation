@@ -1,5 +1,6 @@
 package net.named_data.jndn.tests;
 
+import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.OnRegisterFailed;
@@ -46,7 +47,7 @@ public class ChronoSyncClassic implements SyncAdapter {
 	}
 
 	@Override
-	public void publishNextMessage(long seqNo, ChatbufProto.ChatMessage.ChatMessageType messageType, String message, double time) {
+	public void publishNextMessage(Data data) {
 	}
 
 	@Override

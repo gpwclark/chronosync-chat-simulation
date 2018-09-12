@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  dsync_nfd_integration_test:
+    build:
+      context: ~/development/ndn/eucleo/nfd-docker-integration-test
+      #context: ssh://git@gitlab.labs:SHARE/nfd-docker-integration-test.git
+      args:
+        - VERSION_CXX=ndn-cxx-0.6.1
+        - VERSION_NFD=NFD-0.6.1
+        - VERSION_TOOLS=ndn-tools-0.6
+    image: share/nfd-docker-integration-test
+    ports:
+      - "6363"

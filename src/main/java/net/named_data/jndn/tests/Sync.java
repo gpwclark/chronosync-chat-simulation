@@ -2,6 +2,7 @@ package net.named_data.jndn.tests;
 
 import com.uofantarctica.dsync.DSync;
 import com.uofantarctica.dsync.model.ReturnStrategy;
+import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.OnData;
 import net.named_data.jndn.security.KeyChain;
@@ -17,7 +18,7 @@ public class Sync implements SyncAdapter {
 
 	public Sync(OnData onData, ChronoSync2013.OnInitialized onInitialized, String dataPrefix, String broadcastPrefix, int
 		session, Face face, KeyChain keyChain, String chatRoom, String screenName) {
-		ReturnStrategy strategy = ReturnStrategy.ALL;
+		ReturnStrategy strategy = ReturnStrategy.EXACT;
 		dsync = new DSync(onData,
 			onInitialized,
 			dataPrefix,
@@ -31,9 +32,8 @@ public class Sync implements SyncAdapter {
 	}
 
 	@Override
-	public void publishNextMessage(long seqNo, ChatbufProto.ChatMessage.ChatMessageType messageType, String message, double time) {
-		String messageTypeStr = getStringVersionOfMessageType(messageType);
-		dsync.publishNextMessage(seqNo, messageTypeStr, message, time);
+	public void publishNextMessage(Data data) {
+		dsync.publishNextMessage(data);
 	}
 
 	public String getStringVersionOfMessageType(ChatbufProto.ChatMessage.ChatMessageType type) {

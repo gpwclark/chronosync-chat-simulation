@@ -1,0 +1,30 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'net.named-data'
+version = 'test'
+
+description = """jndn-examples"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+
+
+repositories {
+    mavenLocal()
+    maven { url "https://jitpack.io" }
+    jcenter()
+    google()
+
+}
+dependencies {
+    compile group: 'net.named-data', name: 'jndn', version:'0.16'
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version:'3.8.7'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version:'2.6.1'
+    compile group: 'com.uofantarctica', name: 'dsync', version:'2.0.1'
+    testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.29.1'
+}
