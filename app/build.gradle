@@ -1,0 +1,23 @@
+buildscript {
+    apply from: '../repos.gradle', to: buildscript
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+dependencies {
+    compile project(':proto')
+    implementation "com.uofantarctica:dsync:2.0.1"
+    implementation "net.named-data:jndn:0.16"
+    testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.29.1'
+}
+

@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+package com.uofantarctica.jndn.tests.proto;
+
+//option java_package = "com.uofantarctica.jndn.tests.proto";
+//option java_outer_classname = "ChatbufProto";
+
+//package com.uofantarctica;
+
+message ChatMessage {
+  required string to = 1;
+  required string from = 2;
+  enum ChatMessageType {
+    CHAT = 0;
+    HELLO = 1;
+    LEAVE = 2;
+    JOIN  = 3;
+    OTHER = 4;
+  }
+  required ChatMessageType type = 3 [default = CHAT];
+  optional string data = 4;
+  //TODO int64...
+  optional int32 timestamp = 5;
+}
