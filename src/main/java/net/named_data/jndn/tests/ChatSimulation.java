@@ -5,19 +5,22 @@ import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SafeBag;
 import net.named_data.jndn.transport.TcpTransport;
+import net.named_data.jndn.transport.Transport;
+import net.named_data.jndn.transport.UdpTransport;
 import net.named_data.jndn.util.Blob;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ChatSimulation {
-	private static final Logger log = Logger.getLogger(ChatSimulation.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ChatSimulation.class);
 
 	/*
 	final int participants = 2;//Integer.parseInt(participantInt);
@@ -34,27 +37,28 @@ public class ChatSimulation {
 	final int numMessages;
 	final String screenName;
 	final String hubPrefix;
-	final String defaultChatRoom;
 	final String chatRoom;
 	final String host;
 	final int port;
+	final TransportFactory transportFactory;
 	final int[] messagesSentCountPerUser;
 	final SyncQueue<ArrayList<UserChatSummary>> resultQueue = new SyncQueue<>(5);
 
-	public ChatSimulation(int participants, int numMessages, String screenName, String hubPrefix, String defaultChatRoom, String chatRoom, String host, int port) {
+	public ChatSimulation(int participants, int numMessages, String screenName, String hubPrefix,
+			String chatRoom, String host, int port, TransportFactory transportFactory) {
 		this.participants = participants;
 		this.numMessages = numMessages;
 		this.screenName = screenName;
 		this.hubPrefix = hubPrefix;
-		this.defaultChatRoom = defaultChatRoom;
 		this.chatRoom = chatRoom;
 		this.host = host;
 		this.port = port;
+		this.transportFactory = transportFactory;
 		messagesSentCountPerUser = new int[participants];
 	}
 
-	public boolean simulate() {
-		boolean success = false;
+	public UserChatSummary simulate() {
+		UserChatSummary summary = null;
 		ExecutorService executor = Executors.newFixedThreadPool(participants,
 				new ThreadFactory() {
 					@Override
@@ -65,8 +69,9 @@ public class ChatSimulation {
 						return t;
 					}
 				});
+
 		for (int i = 0; i < participants; ++i) {
-			Face face = new Face(new TcpTransport(), new TcpTransport.ConnectionInfo(host, port));
+			Face face = new Face(transportFactory.getTransport(), transportFactory.getConnectionInfo(host, port));
 			SecurityData db = getSecurityData(face);
 			ChronoChatUser.pumpFaceAwhile(face, 2000);
 
@@ -77,19 +82,19 @@ public class ChatSimulation {
 			executor.execute(chronoChatUser);
 		}
 
-		// gatherMetrics does not return until all chat users have finished
-		// sending all their chat messages and published their results to the
+		// gatherMetrics does not return until all chatter users have finished
+		// sending all their chatter messages and published their results to the
 		// resultQueue.
 		try {
 			UserChatSummary accumulator = gatherMetrics(participants, resultQueue);
 			verifyValidExperiment(accumulator, participants);
 			shutDownExperiment(executor);
-			success = validate(accumulator);
+			summary = accumulator;
 		}
 		catch (Exception e) {
-			log.log(Level.SEVERE, "error finishing simulation.");
+			log.error("error finishing simulation.", e);
 		}
-		return success;
+		return summary;
 	}
 
 	public static class SecurityData {
@@ -114,10 +119,9 @@ public class ChatSimulation {
 			face.setCommandSigningInfo(keyChain, keyChain.getDefaultCertificateName());
 
 			certificateName =  keyChain.getDefaultCertificateName();
-			log.log(Level.INFO,"cert name : " + certificateName.toUri());
+			log.debug("cert name : " + certificateName.toUri());
 		} catch (Exception e) {
-			log.log(Level.SEVERE,
-					"Failed to initiate keychain.", e);
+			log.error("Failed to initiate keychain.", e);
 		}
 
 		return new SecurityData(keyChain, certificateName);
@@ -135,9 +139,9 @@ public class ChatSimulation {
 				if (newResults != null) {
 					++numOfUsersFinished;
 					if (newResults.size() > 0)
-						log.log(Level.INFO, "Another participant finished " + numOfUsersFinished);
+						log.debug("Another participant finished " + numOfUsersFinished);
 					else
-						log.log(Level.INFO, "Another participant finished " + numOfUsersFinished +
+						log.debug("Another participant finished " + numOfUsersFinished +
 								" results is of size 0.");
 					for (UserChatSummary u : newResults) {
 						++numUniqueChats;
@@ -150,7 +154,7 @@ public class ChatSimulation {
 				}
 			}
 			catch (Exception e) {
-				log.log(Level.SEVERE, " error in gather metrics.",e);
+				log.error(" error in gather metrics.",e);
 			}
 		}
 		accumulator.setAccumulationStats(numOfUsersFinished, numUniqueChats);
@@ -163,11 +167,10 @@ public class ChatSimulation {
 		int numUniqueChats = accumulator.getNumUniqueChats();
 
 		if (numUniqueChats != expectedNumUniqueChats) {
-			log.log(Level
-					.SEVERE, "Invalid experiment the number of unique chats, " +
+			log.error("Invalid experiment the number of unique chats, " +
 					numUniqueChats + ", that was recorded does not equal the " +
 					"expected number of unique chats, " + expectedNumUniqueChats +
-					". A 'unique chat' is the view a given receiver has " +
+					". A 'unique chatter' is the view a given receiver has " +
 					"of all sent messages from a different user'");
 		}
 	}
@@ -178,11 +181,11 @@ public class ChatSimulation {
 
 		try {
 			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-				log.log(Level.SEVERE, "Pool did not terminate");
+				log.error("Pool did not terminate");
 				executor.shutdownNow();
 			}
 		} catch (InterruptedException e) {
-			log.log(Level.SEVERE, "error shutting down experiment");
+			log.error("error shutting down experiment", e);
 		}
 	}
 
@@ -198,15 +201,15 @@ public class ChatSimulation {
 			valid = false;
 		}
 		String results = summary.toString();
-		log.log(Level.INFO, results);
-		log.log(Level.INFO,"FIN");
+		log.debug(results);
+		log.debug("FIN");
 		return valid;
 	}
 
 	public boolean correctNumberOfMessageLogs(UserChatSummary summary) {
 		boolean valid = true;
 		if (summary.getAccumulationCount() != participants) {
-			log.log(Level .SEVERE, "FAILED: to test chronochat, number of results " +
+			log.error("FAILED: to test chronochat, number of results " +
 					"AND number of participants did not match:  count: " +
 					summary.getAccumulationCount() + ". " +
 					"participants " + + participants);
@@ -218,7 +221,8 @@ public class ChatSimulation {
 	public boolean correctNumberOfChats(UserChatSummary summary) {
 		boolean valid = true;
 		if (summary.getNumUniqueChats() != UserChatSummary.getExpectedNumUniqueChats(participants)) {
-			log.log(Level .SEVERE, "FAILED: number of unique chats (combinations of 2 in N number of users) not equal" +
+			log.error("FAILED: number of unique chats (combinations of 2 in N number of users) not " +
+					"equal" +
 					"to expected number of unique chats.");
 			valid = false;
 		}
@@ -229,7 +233,7 @@ public class ChatSimulation {
 		boolean valid = true;
 		int expectedTotalCount = UserChatSummary.getExpectedTotalCount(participants, numMessages);
 		if (expectedTotalCount != summary.getTotalCount()) {
-			log.log(Level.SEVERE, "Expected Total Count: " + expectedTotalCount);
+			log.error("Expected Total Count: " + expectedTotalCount);
 			valid = false;
 		}
 		return valid;

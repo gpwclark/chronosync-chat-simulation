@@ -3,13 +3,15 @@ package net.named_data.jndn.tests;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static net.named_data.jndn.tests.ChatSimulation.getSecurityData;
 
 public class ChronoChatUser implements Runnable {
-	private static final Logger log = Logger.getLogger(MockChronoChatTester.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ChronoChatUser.class);
 
 	protected static ArrayList<String> generatedMessages = null;
 
@@ -23,7 +25,7 @@ public class ChronoChatUser implements Runnable {
 	protected int participantNo;
 	protected Name certificateName;
 	protected SyncQueue queue;
-	protected ChronoChatTest chat;
+	protected TestChat chatter;
 	protected int[] messagesSentCountPerUser;
 	protected int numMessages;
 
@@ -67,7 +69,7 @@ public class ChronoChatUser implements Runnable {
 	}
 
 	public static void pumpFaceAwhile(Face face, long awhile) {
-		ChronoChat.pumpFaceAwhile(face, awhile);
+		Chatter.pumpFaceAwhile(face, awhile);
 	}
 
 	@Override
@@ -75,36 +77,36 @@ public class ChronoChatUser implements Runnable {
 		try {
 			String testType = System.getProperty("runMock");
 			if (testType == null || !testType.equals("true")) {
-				log.log(Level.INFO, "RUNNING REAL CHAT TEST.");
-				this.chat = new ChronoChatTester(screenName, chatRoom,
+				log.debug( "RUNNING REAL CHAT TEST.");
+				this.chatter = new TestChatChatter(screenName, chatRoom,
 					new Name(hubPrefix), face, keyChain, certificateName);
 			}
 			else {
-				log.log(Level.INFO, "RUNNING MOCK CHAT TEST.");
-				this.chat = new MockChronoChatTester(screenName, chatRoom,
+				log.debug( "RUNNING MOCK CHAT TEST.");
+				this.chatter = new MockTestChatChatter(screenName, chatRoom,
 					new Name(hubPrefix), face, keyChain, certificateName);
 			}
 
-			chat.setTestContext(this, numMessages, participantNo,
+			chatter.setTestContext(this, numMessages, participantNo,
 				participants, baseScreenName);
-			chat.pumpFaceAwhile(5000);
+			chatter.pumpFaceAwhile(5000);
 
 			//create thread pool to
 			//1. create chats and send series of predefined messages n times then send leave command.
 			//2. Verify that each message was received n times from each thread.
-			//3. each thread print metric: for each chat participant number received over total.
+			//3. each thread print metric: for each chatter participant number received over total.
 			int totalMessagesSent = 0;
 			ArrayList<String> messages = getMessages(numMessages);
 
 			for (String m : messages) {
-				long chatDelayTime = chat.getChatDelayTime();
+				long chatDelayTime = chatter.getChatDelayTime();
 				long startTime = System.currentTimeMillis();
 				long timeNow = System.currentTimeMillis();
 
 				boolean sentMessage = false;
 				while (!sentMessage) {
 					if  ((timeNow - startTime) >= chatDelayTime) {
-						chat.sendMessage(m);
+						chatter.sendMessage(m);
 						++totalMessagesSent;
 						//messagesSentCountPerUser is shared in
 						// every thread but each thread only writes to
@@ -112,28 +114,28 @@ public class ChronoChatUser implements Runnable {
 						messagesSentCountPerUser[participantNo] =  totalMessagesSent;
 						sentMessage = true;
 					}
-					chat.pumpFaceAwhile(10);
+					chatter.pumpFaceAwhile(10);
 					timeNow = System.currentTimeMillis();
 				}
 			}
 
 			int numMessagesEachUserMustSend = numMessages;
 			while(allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {
-				chat.pumpFaceAwhile(3000);
+				chatter.pumpFaceAwhile(3000);
 			}
-			chat.pumpFaceAwhile(15000); // for 3 sync lifetimes just to be sure.
-			leave(chat);
-			chat.submitStats(queue, numMessages);
+			chatter.pumpFaceAwhile(15000); // for 3 sync lifetimes just to be sure.
+			leave(chatter);
+			chatter.submitStats(queue, numMessages);
 
 			if (allUsersHaveNotSentAllMessages(numMessagesEachUserMustSend)) {
-				log.log(Level.SEVERE, " Failed to conduct valid experiment. " +
-							"Not all messages were sent in chat room, " +
+				log.error( " Failed to conduct valid experiment. " +
+							"Not all messages were sent in chatter room, " +
 							"results invalid.");
 				System.exit(1);
 			}
 
 		} catch (Exception e) {
-			log.log(Level.SEVERE, null, e);
+			log.error( "failed running chronochatuser thread", e);
 		}
 	}
 

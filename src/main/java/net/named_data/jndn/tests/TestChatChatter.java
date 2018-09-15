@@ -3,26 +3,24 @@ package net.named_data.jndn.tests;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
-	private static final Logger log = Logger.getLogger(TestChronoChat.class.getName());
+public class TestChatChatter extends Chatter implements TestChat {
+	private static final Logger log = LoggerFactory.getLogger(TestChatChatter.class);
 
 	protected static Random rand = new Random();
 
-	protected Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
-	protected Map<String, Integer> aChatLog = new HashMap<>();
 	protected int particpantNo;
 	protected int participants;
 
-	public ChronoChatTester(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
+	public TestChatChatter(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
 		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
 	}
 
@@ -45,17 +43,17 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 
 	private void incMessage(String name, String message){
 		if (name.contains(userName_)) {
-			log.log(Level.SEVERE, "Not " +
+			log.error( "Not " +
 				"incrementing message to myself, it is me. I am: " +
 				userName_ + "and I " + "tried to inc message from: " + name);
 			return;
 		}
 		Map<String, Integer> aChatLog = getUserChatLogFromUserName(name);
 		if (aChatLog == null) {
-			log.log(Level.SEVERE, "Asked " +
+			log.error( "Asked " +
 				"for participant who was not in the map, illegal call: " +
 				name);
-			log.log(Level.SEVERE, "Valid " +
+			log.error( "Valid " +
 				"participants");
 
 			System.exit(1);
@@ -83,7 +81,7 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 			}
 		}
 		if (!found) {
-			log.log(Level.SEVERE,
+			log.error(
 				"Couldn't find user with name: " + name);
 			System.exit(1);
 		}
@@ -112,20 +110,20 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	@Override
 	public void updateUser(String oldName, String newName) {
 		if (oldName.equals(newName)) {
-			log.log(Level.INFO," updateUser should not have been called, same string.");
+			log.debug(" updateUser should not have been called, same string.");
 			return;
 		}
 
-		log.log(Level.INFO, "update user. " +
+		log.debug( "update user. " +
 			"oldName" + oldName + ", new name: " + newName);
 		Map<String, Integer> aChatLog = userByMessageByMessageCount.get(oldName);
 		if (aChatLog != null) {
-			log.log(Level.INFO, "proper use of updateUser?");
+			log.debug( "proper use of updateUser?");
 			userByMessageByMessageCount.put(newName, copyAChatLog(aChatLog));
 			userByMessageByMessageCount.remove(oldName);
 		}
 		else {
-			log.log(Level.INFO, "need to " +
+			log.debug( "need to " +
 				"figure out what to do with updateUser, there was no userByMessageByMessageCount " +
 				"for them");
 		}
@@ -149,19 +147,19 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	@Override
 	public void addUser(String name) {
 		if (name.length() > screenName_.length()) {
-			if (userByMessageByMessageCount.get(name) == null) {
-				log.log(Level.INFO,
+			if (userByMessageByMessageCount.get(name) == null && !name.contains(screenName_)) {
+				log.debug(
 					"adding user:" +
 					" " + name + " within test context for " + screenName_);
 
 				Map<String, Integer> newChatLog = copyAChatLog(aChatLog);
 				userByMessageByMessageCount.put(name, newChatLog);
-				log.log(Level.INFO,"participant(s) " +
+				log.debug("participant(s) " +
 					userByMessageByMessageCount.size());
 			}
 		}
 		else {
-			log.log(Level.SEVERE, "It " +
+			log.error( "It " +
 				"appears a userName without a session number was almost added" +
 				" to the userByMessageByMessageCount. That username was: " + name);
 
@@ -171,7 +169,7 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 	@Override
 	public void submitStats(SyncQueue queue, int numMessages) {
 		int messagesSize = numMessages;
-		log.log(Level.INFO,"Expected " + messagesSize + " messages");
+		log.debug("Expected " + messagesSize + " messages");
 
 		ArrayList<UserChatSummary> values = new ArrayList<>();
 
@@ -190,9 +188,9 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 			if (userName.contains(screenName_))
 				continue;
 
-			log.log(Level.INFO,"submitStats from within " + screenName_ + " " +
+			log.debug("submitStats from within " + screenName_ + " " +
 				"for " + userName);
-			log.log(Level.INFO,"reported number of unique messages: " +
+			log.debug("reported number of unique messages: " +
 				userChatLog
 				.size());
 			//TODO there is a case where one unique message got recorded 0 times.
@@ -221,12 +219,12 @@ public class ChronoChatTester extends ChronoChat implements ChronoChatTest {
 				currCount += count;
 			}
 			individualResults.append(" ] ");
-			log.log(Level.INFO, individualResults
+			log.debug( individualResults
 				.toString());
-			log.log(Level.INFO,"");
-			log.log(Level.INFO,"count: " + currCount);
-			log.log(Level.INFO,"duplicates: " + currDupes);
-			log.log(Level.INFO,"numLost: " + currNumLost);
+			log.debug("");
+			log.debug("count: " + currCount);
+			log.debug("duplicates: " + currDupes);
+			log.debug("numLost: " + currNumLost);
 
 			values.add(new UserChatSummary(userName, currCount, currDupes, currNumLost));
 		}

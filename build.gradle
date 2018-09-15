@@ -22,9 +22,11 @@ repositories {
 
 }
 dependencies {
-    compile group: 'net.named-data', name: 'jndn', version:'0.16'
+    compile "net.named-data:jndn:${jndn_version}"
     compile group: 'org.xerial', name: 'sqlite-jdbc', version:'3.8.7'
     compile group: 'com.google.protobuf', name: 'protobuf-java', version:'2.6.1'
     compile group: 'com.uofantarctica', name: 'dsync', version:'2.0.1'
     testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.29.1'
+    implementation "org.slf4j:slf4j-api:${slf4j_version}"
+    implementation "org.slf4j:slf4j-log4j12:${slf4j_version}"
 }

@@ -16,22 +16,26 @@ import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.sync.ChronoSync2013;
 import net.named_data.jndn.tests.ChatbufProto.ChatMessage;
 import net.named_data.jndn.util.Blob;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
+public abstract class Chatter implements ChronoSync2013.OnInitialized,
 		ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback, Chat {
-	private static final Logger log = Logger.getLogger(ChronoChat.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Chatter.class);
 
-	public ChronoChat
+	protected Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
+	protected Map<String, Integer> aChatLog = new HashMap<>();
+
+	public Chatter
 		(String screenName, String chatRoom, Name hubPrefix, Face face,
-		 KeyChain keyChain, Name certificateName)
-	{
+		 KeyChain keyChain, Name certificateName) {
 		screenName_ = screenName;
 		chatRoom_ = chatRoom;
 		face_ = face;
@@ -43,7 +47,8 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		chatPrefix_ = new Name(hubPrefix).append(chatRoom_).append(getRandomString());
 		int session = (int)Math.round(getNowMilliseconds() / 1000.0);
 		userName_ = screenName_ + session;
-		Name broadcastPrefix = new Name("/ndn/broadcast/ChronoChat-0.3").append(chatRoom_);
+		Name broadcastPrefix = new Name("/ndn/broadcast/Chatter-0.3").append(chatRoom_);
+		//TODO to accommodate any new sync implementations. Should rely on a sync factory.
 		try {
 			if (Switches.useNewSyncImpl()) {
 				sync_ = new Sync(this, this, hubPrefix + "/" + chatRoom, broadcastPrefix.toUri(), session, face, keyChain, chatRoom,
@@ -61,17 +66,16 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 				certificateName,
 				syncLifetime_,
 				RegisterFailed.onRegisterFailed_);
+				try {
+					face.registerPrefix(chatPrefix_, this, RegisterFailed.onRegisterFailed_);
+				} catch (IOException | SecurityException ex) {
+					log.error("failed to register prefix", ex);
+				}
 			}
 		} catch (Exception e) {
-			log.log(Level.SEVERE, "failed to create ChronoSync2013 class", e);
+			log.error("failed to create ChronoSync2013 class", e);
 			System.exit(1);
 			return;
-		}
-
-		try {
-			face.registerPrefix(chatPrefix_, this, RegisterFailed.onRegisterFailed_);
-		} catch (IOException | SecurityException ex) {
-			log.log(Level.SEVERE, null, ex);
 		}
 	}
 
@@ -97,12 +101,11 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			if (!chatMessage.equals("")) {
 				sync_.publishNextSequenceNo();
 				messageCacheAppend(ChatMessage.ChatMessageType.CHAT, chatMessage);
-				log.log(Level.INFO,screenName_ + ": " + chatMessage);
+				log.debug(screenName_ + ": " + chatMessage);
 			}
 		}
 		catch(Exception e) {
-			log.log(Level.SEVERE,
-				null, e);
+			log.error("failed to publish next message.", e);
 		}
 	}
 
@@ -113,7 +116,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			messageCacheAppend(ChatMessage.ChatMessageType.LEAVE, "xxx");
 		}
 		catch (Exception e) {
-			log.log(Level.SEVERE, null, e);
+			log.error("failed to leave", e);
 		}
 	}
 
@@ -131,7 +134,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 	public final void
 	onInitialized()
 	{
-		log.log(Level.INFO,"on initialzed for...: " + screenName_);
+		log.debug("on initialzed for...: " + screenName_);
 		// Set the heartbeat timeout using the Interest timeout mechanism. The
 		// heartbeat() function will call itself again after a timeout.
 		// TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
@@ -140,25 +143,25 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		try {
 			face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
 		} catch (IOException ex) {
-			log.log(Level.SEVERE, null, ex);
+			log.error("failed to express interest.", ex);
 			return;
 		}
 
 		if (roster_.indexOf(userName_) < 0) {
 			addToRoster(userName_);
-			log.log(Level.INFO,"Member: " + screenName_);
-			log.log(Level.INFO,screenName_ + ": Join");
+			log.debug("Member: " + screenName_);
+			log.debug(screenName_ + ": Join");
 			messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
 		}
 	}
 
-	// sendInterest: Send a ChronoChat Interest to fetch chat messages after the
+	// sendInterest: Send a Chatter Interest to fetch chatter messages after the
 	// user gets the Sync data packet back but will not send interest.
 	// (Do not call this. It is only public to implement the interface.)
 	public final void
 	onReceivedSyncState(List syncStates, boolean isRecovery)
 	{
-		// This is used by onData to decide whether to display the chat messages.
+		// This is used by onData to decide whether to display the chatter messages.
 		isRecoverySyncState_ = isRecovery;
 
 		ArrayList sendList = new ArrayList(); // of String
@@ -197,13 +200,13 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			try {
 				face_.expressInterest(interest, this, ChatTimeout.onTimeout_);
 			} catch (IOException ex) {
-				log.log(Level.SEVERE, null, ex);
+				log.error( "fail to express interest", ex);
 				return;
 			}
 		}
 	}
 
-	// Send back a ChronoChat Data Packet which contains the user's message.
+	// Send back a Chatter Data Packet which contains the user's message.
 	// (Do not call this. It is only public to implement the interface.)
 	public final void
 	onInterest
@@ -242,27 +245,26 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			try {
 				keyChain_.sign(data, certificateName_);
 			} catch (SecurityException ex) {
-				log.log(Level.SEVERE, null, ex);
+				log.error("security exception in keychain sign", ex);
 				return;
 			}
 			try {
 				face.putData(data);
 			} catch (IOException ex) {
-				log.log(Level.SEVERE, null, ex);
+				log.error("failed to put data", ex);
 			}
 		}
 	}
 
-	// Process the incoming ChronoChat data.
+	// Process the incoming Chatter data.
 	// (Do not call this. It is only public to implement the interface.)
 	public final void
-	onData(Interest interest, Data data)
-	{
+	onData(Interest interest, Data data) {
 		ChatMessage content;
 		try {
 			content = ChatMessage.parseFrom(data.getContent().getImmutableArray());
 		} catch (InvalidProtocolBufferException ex) {
-			log.log(Level.SEVERE, null, ex);
+			log.error("failed to parse data", ex);
 			return;
 		}
 		double timeNow = getNowMilliseconds();
@@ -301,7 +303,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 
 			if (l == roster_.size()) {
 				addToRoster(nameAndSession);
-				log.log(Level.INFO,name + ": Join");
+				log.debug(name + ": Join");
 			}
 
 			// Set the alive timeout using the Interest timeout mechanism.
@@ -313,7 +315,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 					(timeout, DummyOnData.onData_,
 						this.new Alive(sequenceNo, name, sessionNo, prefix));
 			} catch (IOException ex) {
-				log.log(Level.SEVERE, null, ex);
+				log.error("failed to express interest.", ex);
 				return;
 			}
 
@@ -335,7 +337,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 				int n = roster_.indexOf(nameAndSession);
 				if (n >= 0 && !name.equals(screenName_)) {
 					roster_.remove(n);
-					log.log(Level.INFO,name + ": Leave");
+					log.debug(name + ": Leave");
 				}
 			}
 		}
@@ -356,15 +358,15 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			}
 		}
 		catch(Exception e) {
-			log.log(Level.SEVERE, "could not setRoster with newName: " +
-				newName,	e);
+			log.error("could not setRoster with newName: " +
+				newName, e);
 		}
 	}
 
 	private static class ChatTimeout implements OnTimeout {
 		public final void
 		onTimeout(Interest interest) {
-			log.log(Level.INFO,"Timeout waiting for chat data");
+			log.debug("Timeout waiting for chatter data");
 		}
 
 		public final static OnTimeout onTimeout_ = new ChatTimeout();
@@ -372,7 +374,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 
 	/**
 	 * This repeatedly calls itself after a timeout to send a heartbeat message
-	 * (chat message type HELLO).
+	 * (chatter message type HELLO).
 	 * This method has an "interest" argument because we use it as the onTimeout
 	 * for Face.expressInterest.
 	 */
@@ -392,7 +394,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			try {
 				face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
 			} catch (IOException ex) {
-				log.log(Level.SEVERE, null, ex);
+				log.error("fail to express interest.", ex);
 			}
 		}
 	}
@@ -422,7 +424,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 			if (sequenceNo != -1 && n >= 0) {
 				if (tempSequenceNo_ == sequenceNo) {
 					roster_.remove(n);
-					log.log(Level.INFO,name_ + ": Leave");
+					log.debug(name_ + ": Leave");
 				}
 			}
 		}
@@ -479,7 +481,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 		public final void
 		onRegisterFailed(Name prefix)
 		{
-			log.log(Level.INFO,"Register failed for prefix " + prefix.toUri());
+			log.debug("Register failed for prefix " + prefix.toUri());
 			//System.exit(1);
 		}
 
@@ -537,8 +539,7 @@ public abstract class ChronoChat implements ChronoSync2013.OnInitialized,
 				Thread.sleep(10);
 			}
 			catch (Exception e) {
-				log.log(Level.SEVERE,
-					"failed in pumpFaceAwhile", e);
+				log.error("failed in pumpFaceAwhile", e);
 			}
 		}
 

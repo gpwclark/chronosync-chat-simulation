@@ -7,12 +7,12 @@ import net.named_data.jndn.Face;
 import net.named_data.jndn.OnData;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.sync.ChronoSync2013;
-
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Sync implements SyncAdapter {
 	private static final String TAG = Sync.class.getName();
-	private static final Logger log = Logger.getLogger(TAG);
+	private static final Logger log = LoggerFactory.getLogger(Sync.class);
 
 	private final DSync dsync;
 

@@ -7,14 +7,14 @@ import net.named_data.jndn.OnRegisterFailed;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.sync.ChronoSync2013;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ChronoSyncClassic implements SyncAdapter {
 	private static final String TAG = ChronoSyncClassic.class.getName();
-	private static final Logger log = Logger.getLogger(TAG);
+	private static final Logger log = LoggerFactory.getLogger(ChronoSyncClassic.class);
 
 	ChronoSync2013 sync_;
 	public ChronoSyncClassic(ChronoSync2013.OnReceivedSyncState onReceivedSyncState,
@@ -40,9 +40,9 @@ public class ChronoSyncClassic implements SyncAdapter {
 				syncLifetime_,
 				onRegisterFailed_);
 		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to initialize sync.", e);
+			log.error( "Failed to initialize sync.", e);
 		} catch (SecurityException e) {
-			log.log(Level.SEVERE, "Failed to initialize sync.", e);
+			log.error( "Failed to initialize sync.", e);
 		}
 	}
 
@@ -60,9 +60,9 @@ public class ChronoSyncClassic implements SyncAdapter {
 		try {
 			sync_.publishNextSequenceNo();
 		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to publishNextSequenceNo.", e);
+			log.error( "Failed to publishNextSequenceNo.", e);
 		} catch (SecurityException e) {
-			log.log(Level.SEVERE, "Failed to publishNextSequenceNo.", e);
+			log.error( "Failed to publishNextSequenceNo.", e);
 		}
 
 	}
