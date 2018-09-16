@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests.sync;
+package com.uofantarctica.jndn.helpers;
 
 import net.named_data.jndn.transport.TcpTransport;
 import net.named_data.jndn.transport.Transport;

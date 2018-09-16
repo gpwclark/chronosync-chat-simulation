@@ -7,7 +7,6 @@ repositories {
 }
 
 dependencies {
-    classpath "org.xerial:sqlite-jdbc:3.8.7"
     classpath "org.slf4j:slf4j-api:1.7.25"
     classpath "org.slf4j:slf4j-log4j12:1.7.25"
     classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'

@@ -2,30 +2,32 @@ buildscript {
     apply from: '../repos.gradle', to: buildscript
 }
 
+//repositories {
+//    mavenLocal()
+//    jcenter()
+//}
+//
+//dependencies {
+//    implementation "net.named-data:jndn:0.16"
+//}
+
 apply plugin: 'java'
 apply plugin: 'maven'
 
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
 }
 
 dependencies {
-    compile project(':proto')
-    compile project(':helpers')
+    //implementation "org.xerial:sqlite-jdbc:3.8.7"
     implementation "net.named-data:jndn:0.16"
-    implementation "com.uofantarctica:dsync:2.0.1"
-    testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.29.1'
-}
-
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId 'com.uofantarctica'
-            artifactId 'jndn.tests.app'
+            artifactId 'jndn.helpers'
             version '0.1'
 
             from components.java

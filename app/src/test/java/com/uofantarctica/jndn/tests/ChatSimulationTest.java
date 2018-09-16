@@ -3,11 +3,12 @@ package com.uofantarctica.jndn.tests;
 import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
 import com.palantir.docker.compose.connection.waiting.HealthChecks;
+import com.uofantarctica.jndn.helpers.DockerTcpTransportFactory;
+import com.uofantarctica.jndn.helpers.TransportConfiguration;
+import com.uofantarctica.jndn.helpers.TransportFactory;
 import com.uofantarctica.jndn.tests.chat.ChatSimulation;
 import com.uofantarctica.jndn.tests.chat.ChatSimulationBuilder;
 import com.uofantarctica.jndn.tests.chat.UserChatSummary;
-import com.uofantarctica.jndn.tests.sync.DockerTcpTransportFactory;
-import com.uofantarctica.jndn.tests.sync.TransportFactory;
 import net.named_data.jndn.encoding.WireFormat;
 import org.junit.After;
 import org.junit.Before;
@@ -24,14 +25,13 @@ public class ChatSimulationTest {
 	int port;
 	int numMessages = 10;
 	int numParticipants = 2;
+	UserChatSummary summary = null;
 
 	@ClassRule
 	public static DockerComposeRule docker = DockerComposeRule.builder()
 			.file("src/test/resources/docker-compose.yml")
 			.waitingForService(NFD_SERVICE, HealthChecks.toHaveAllPortsOpen())
 			.build();
-
-	UserChatSummary summary = null;
 
 	@Before
 	public void setUp() throws Exception {
@@ -41,30 +41,29 @@ public class ChatSimulationTest {
 				.port(INTERNAL_PORT);
 		host = nfd.getIp();
 		port = nfd.getExternalPort();
-		TransportFactory transportFactory = new DockerTcpTransportFactory();
+		TransportFactory transportFactory = new DockerTcpTransportFactory(host, port);
+		TransportConfiguration.setTransportFactory(transportFactory);
 
 		String screenName = "scratchy";
-		String hubPrefix = "ndn/broadcast/edu/ucla/remap";
+		String hubPrefix = "/ndn/broadcast/chat-room";
 		String defaultChatRoom = "ndnchat";
 		String chatRoom = defaultChatRoom;
-		String host = "127.0.0.1";
+		String broadcastBaseName = "/ndn/broadcast/sync-simulation-test";
 
 		ChatSimulationBuilder builder = ChatSimulationBuilder.aChatSimulation();
-		builder.withPort(port)
-				.withHost(host)
-				.withScreenName(screenName)
+		builder.withScreenName(screenName)
+				.withBroadcastBaseName(broadcastBaseName)
 				.withHubPrefix(hubPrefix)
 				.withChatRoom(chatRoom)
 				.withNumMessages(numMessages)
-				.withNumParticipants(numParticipants)
-				.withTransportFactory(transportFactory);
+				.withNumParticipants(numParticipants);
 		ChatSimulation simulation = builder.build();
 		summary = simulation.simulate();
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		//docker.containers().container(NFD_SERVICE).stop();
+		docker.containers().container(NFD_SERVICE).stop();
 	}
 
 	@Test

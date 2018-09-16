@@ -2,6 +2,7 @@ package com.uofantarctica.jndn.tests.chat;
 
 import com.uofantarctica.jndn.tests.sync.SyncQueue;
 import net.named_data.jndn.Face;
+import net.named_data.jndn.Interest;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MockTestChatChatter extends TestChatChatter implements TestChat {
@@ -18,8 +20,9 @@ public class MockTestChatChatter extends TestChatChatter implements TestChat {
 	private ArrayList<String> messages;
 	private Map<String, Integer> sentMessageChatLog;
 
-	public MockTestChatChatter(String screenName, String chatRoom, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
-		super(screenName, chatRoom, hubPrefix, face, keyChain, certificateName);
+	public MockTestChatChatter(String screenName, String broadcastBaseName, String chatRoom, Name hubPrefix, Face face,
+	                           KeyChain keyChain, Name certificateName, List<Interest> interestsExpressed) {
+		super(screenName, broadcastBaseName, chatRoom, hubPrefix, face, keyChain, certificateName, interestsExpressed);
 	}
 
 	@Override

@@ -2,12 +2,14 @@ package com.uofantarctica.jndn.tests.chat;
 
 import com.uofantarctica.jndn.tests.sync.SyncQueue;
 import net.named_data.jndn.Face;
+import net.named_data.jndn.Interest;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ChronoChatUser implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(ChronoChatUser.class);
@@ -15,6 +17,7 @@ public class ChronoChatUser implements Runnable {
 	protected static ArrayList<String> generatedMessages = null;
 
 	protected String screenName;
+	protected String broadcastBaseName;
 	protected String baseScreenName;
 	protected String chatRoom;
 	protected String hubPrefix;
@@ -27,17 +30,20 @@ public class ChronoChatUser implements Runnable {
 	protected TestChat chatter;
 	protected int[] messagesSentCountPerUser;
 	protected int numMessages;
+	protected List<Interest> interestsExpressed;
 
 	public ChronoChatUser(int participantNo, int participants,
+	                      String broadcastBaseName,
 	                      String baseScreenName, String chatRoom, String
-		                      hubPrefix, Face face, KeyChain keyChain,
+			                      hubPrefix, Face face, KeyChain keyChain,
 	                      SyncQueue queue, Name
-		                      certificateName, int[]
-		                      messagesSentCountPerUser,
-	                      int numMessages) {
+			                      certificateName, int[]
+			                      messagesSentCountPerUser,
+	                      int numMessages, List<Interest> interestExpressed) {
 		this.participantNo = participantNo;
 		this.participants = participants;
 		this.baseScreenName = baseScreenName;
+		this.broadcastBaseName = broadcastBaseName;
 		this.screenName = generateScreenName(baseScreenName, participantNo);
 		this.chatRoom = chatRoom;
 		this.hubPrefix = hubPrefix;
@@ -47,6 +53,7 @@ public class ChronoChatUser implements Runnable {
 		this.certificateName = certificateName;
 		this.messagesSentCountPerUser = messagesSentCountPerUser;
 		this.numMessages = numMessages;
+		this.interestsExpressed = interestExpressed;
 	}
 
 	public static ArrayList<String> getMessages(int numMessages) {
@@ -77,13 +84,13 @@ public class ChronoChatUser implements Runnable {
 			String testType = System.getProperty("runMock");
 			if (testType == null || !testType.equals("true")) {
 				log.debug( "RUNNING REAL CHAT TEST.");
-				this.chatter = new TestChatChatter(screenName, chatRoom,
-					new Name(hubPrefix), face, keyChain, certificateName);
+				this.chatter = new TestChatChatter(screenName, broadcastBaseName, chatRoom,
+					new Name(hubPrefix), face, keyChain, certificateName, interestsExpressed);
 			}
 			else {
 				log.debug( "RUNNING MOCK CHAT TEST.");
-				this.chatter = new MockTestChatChatter(screenName, chatRoom,
-					new Name(hubPrefix), face, keyChain, certificateName);
+				this.chatter = new MockTestChatChatter(screenName, broadcastBaseName, chatRoom,
+					new Name(hubPrefix), face, keyChain, certificateName, interestsExpressed);
 			}
 
 			chatter.setTestContext(this, numMessages, participantNo,

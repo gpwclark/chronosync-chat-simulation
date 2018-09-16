@@ -1,8 +1,9 @@
 package com.uofantarctica.jndn.tests.chat;
 
 import com.uofantarctica.jndn.tests.sync.SyncQueue;
-import com.uofantarctica.jndn.tests.sync.TransportFactory;
+import com.uofantarctica.jndn.helpers.TransportConfiguration;
 import net.named_data.jndn.Face;
+import net.named_data.jndn.Interest;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SafeBag;
@@ -12,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -21,26 +24,28 @@ public class ChatSimulation {
 	private static final Logger log = LoggerFactory.getLogger(ChatSimulation.class);
 	final int participants;
 	final int numMessages;
+	final String broadcastBaseName;
 	final String screenName;
 	final String hubPrefix;
 	final String chatRoom;
-	final String host;
-	final int port;
-	final TransportFactory transportFactory;
 	final int[] messagesSentCountPerUser;
 	final SyncQueue<ArrayList<UserChatSummary>> resultQueue = new SyncQueue<>(5);
+	private List<Interest> interestExpressed;
 
-	public ChatSimulation(int participants, int numMessages, String screenName, String hubPrefix,
-			String chatRoom, String host, int port, TransportFactory transportFactory) {
+	public ChatSimulation(int participants, int numMessages, String broadcastBaseName, String screenName, String
+			hubPrefix, String chatRoom) {
 		this.participants = participants;
 		this.numMessages = numMessages;
+		this.broadcastBaseName = broadcastBaseName;
 		this.screenName = screenName;
 		this.hubPrefix = hubPrefix;
 		this.chatRoom = chatRoom;
-		this.host = host;
-		this.port = port;
-		this.transportFactory = transportFactory;
 		messagesSentCountPerUser = new int[participants];
+		interestExpressed = new CopyOnWriteArrayList<>();
+	}
+
+	public List<Interest> getAllInterests() {
+		return interestExpressed;
 	}
 
 	public UserChatSummary simulate() {
@@ -57,13 +62,13 @@ public class ChatSimulation {
 				});
 
 		for (int i = 0; i < participants; ++i) {
-			Face face = new Face(transportFactory.getTransport(), transportFactory.getConnectionInfo(host, port));
+			Face face = TransportConfiguration.getFace();
 			SecurityData db = getSecurityData(face);
 			ChronoChatUser.pumpFaceAwhile(face, 2000);
 
 			ChronoChatUser chronoChatUser = new ChronoChatUser(i, participants,
-					screenName, chatRoom, hubPrefix, face, db.keyChain, resultQueue,
-					db.certificateName, messagesSentCountPerUser, numMessages);
+					broadcastBaseName, screenName, chatRoom, hubPrefix, face, db.keyChain, resultQueue,
+					db.certificateName, messagesSentCountPerUser, numMessages, interestExpressed);
 
 			executor.execute(chronoChatUser);
 		}

@@ -35,22 +35,23 @@ public abstract class Chatter implements ChronoSync2013.OnInitialized,
 
 	protected Map<String, Map<String, Integer>> userByMessageByMessageCount = new HashMap<>();
 	protected Map<String, Integer> aChatLog = new HashMap<>();
+	protected List<Interest> interestsExpressed;
 
-	public Chatter
-		(String screenName, String chatRoom, Name hubPrefix, Face face,
-		 KeyChain keyChain, Name certificateName) {
+	public Chatter (String screenName, String broadcastBaseName, String chatRoom, Name hubPrefix, Face face,
+		 KeyChain keyChain, Name certificateName, List<Interest> interestsExpressed) {
 		screenName_ = screenName;
 		chatRoom_ = chatRoom;
 		face_ = face;
 		keyChain_ = keyChain;
 		certificateName_ = certificateName;
 		heartbeat_ = this.new Heartbeat();
+		this.interestsExpressed = interestsExpressed;
 
 		// This should only be called once, so get the random string here.
 		chatPrefix_ = new Name(hubPrefix).append(chatRoom_).append(getRandomString());
 		int session = (int)Math.round(getNowMilliseconds() / 1000.0);
 		userName_ = screenName_ + session;
-		Name broadcastPrefix = new Name("/ndn/broadcast/Chatter-0.3").append(chatRoom_);
+		Name broadcastPrefix = new Name(broadcastBaseName).append(chatRoom_);
 		//TODO to accommodate any new sync implementations. Should rely on a sync factory.
 		try {
 			if (Switches.useNewSyncImpl()) {
@@ -263,6 +264,7 @@ public abstract class Chatter implements ChronoSync2013.OnInitialized,
 	// (Do not call this. It is only public to implement the interface.)
 	public final void
 	onData(Interest interest, Data data) {
+	 	interestsExpressed.add(interest);
 		ChatbufProto.ChatMessage content;
 		try {
 			content = ChatbufProto.ChatMessage.parseFrom(data.getContent().getImmutableArray());

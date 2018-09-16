@@ -1,16 +1,12 @@
 package com.uofantarctica.jndn.tests.chat;
 
-import com.uofantarctica.jndn.tests.sync.TransportFactory;
-
 public final class ChatSimulationBuilder {
 	int participants;
 	int numMessages;
 	String screenName;
 	String hubPrefix;
 	String chatRoom;
-	String host;
-	int port;
-	TransportFactory transportFactory;
+	String broadcastBaseName;
 
 	private ChatSimulationBuilder() {
 	}
@@ -44,22 +40,12 @@ public final class ChatSimulationBuilder {
 		return this;
 	}
 
-	public ChatSimulationBuilder withHost(String host) {
-		this.host = host;
+	public ChatSimulationBuilder withBroadcastBaseName(String broadcastBaseName) {
+		this.broadcastBaseName = broadcastBaseName;
 		return this;
 	}
 
-	public ChatSimulationBuilder withPort(int port) {
-		this.port = port;
-		return this;
-	}
-
-
-	public ChatSimulationBuilder withTransportFactory(TransportFactory transportFactory) {
-		this.transportFactory = transportFactory;
-		return this;
-	}
 	public ChatSimulation build() {
-		return new ChatSimulation(participants, numMessages, screenName, hubPrefix, chatRoom, host, port, transportFactory);
+		return new ChatSimulation(participants, numMessages, broadcastBaseName, screenName, hubPrefix, chatRoom);
 	}
 }

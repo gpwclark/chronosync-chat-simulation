@@ -12,3 +12,19 @@ allprojects {
         javaTargetVersion = JavaVersion.VERSION_1_8
     }
 }
+
+subprojects {
+    repositories {
+        mavenLocal()
+        maven { url "https://jitpack.io" }
+        jcenter()
+        google()
+        mavenCentral()
+    }
+
+    //dependencies {
+        //implementation "org.xerial:sqlite-jdbc:3.8.7"
+     //   implementation "net.named-data:jndn:0.16"
+    //}
+
+}
