@@ -1,6 +1,5 @@
-package com.uofantarctica.jndn.tests.chat;
+package com.uofantarctica.jndn.sync_test_framework;
 
-import com.uofantarctica.jndn.tests.sync.SyncQueue;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
 import net.named_data.jndn.Name;

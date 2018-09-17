@@ -1,6 +1,4 @@
-package com.uofantarctica.jndn.tests.sync;
-
-import com.uofantarctica.jndn.tests.chat.Chatter;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;

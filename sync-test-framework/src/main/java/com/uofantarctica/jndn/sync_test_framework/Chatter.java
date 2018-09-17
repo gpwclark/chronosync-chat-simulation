@@ -1,8 +1,8 @@
-package com.uofantarctica.jndn.tests.chat;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import com.uofantarctica.jndn.proto.ChatbufProto;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.uofantarctica.jndn.tests.sync.Switches;
+import com.uofantarctica.jndn.sync_test_framework.Switches;
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -15,9 +15,6 @@ import net.named_data.jndn.OnTimeout;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.sync.ChronoSync2013;
-import com.uofantarctica.jndn.tests.sync.ChronoSyncClassic;
-import com.uofantarctica.jndn.tests.sync.Sync;
-import com.uofantarctica.jndn.tests.sync.SyncAdapter;
 import net.named_data.jndn.util.Blob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

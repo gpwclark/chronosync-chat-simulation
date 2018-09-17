@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests.sync;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import com.uofantarctica.dsync.DSync;
 import com.uofantarctica.dsync.model.ReturnStrategy;

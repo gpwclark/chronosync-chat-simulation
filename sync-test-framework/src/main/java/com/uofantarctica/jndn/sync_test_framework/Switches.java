@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests.sync;
+package com.uofantarctica.jndn.sync_test_framework;
 
 public class Switches {
 	public static boolean useNewSyncImpl() {

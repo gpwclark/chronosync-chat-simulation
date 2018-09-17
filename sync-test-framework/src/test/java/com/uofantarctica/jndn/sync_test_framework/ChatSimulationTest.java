@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
@@ -6,9 +6,9 @@ import com.palantir.docker.compose.connection.waiting.HealthChecks;
 import com.uofantarctica.jndn.helpers.DockerTcpTransportFactory;
 import com.uofantarctica.jndn.helpers.TransportConfiguration;
 import com.uofantarctica.jndn.helpers.TransportFactory;
-import com.uofantarctica.jndn.tests.chat.ChatSimulation;
-import com.uofantarctica.jndn.tests.chat.ChatSimulationBuilder;
-import com.uofantarctica.jndn.tests.chat.UserChatSummary;
+import com.uofantarctica.jndn.sync_test_framework.ChatSimulation;
+import com.uofantarctica.jndn.sync_test_framework.ChatSimulationBuilder;
+import com.uofantarctica.jndn.sync_test_framework.UserChatSummary;
 import net.named_data.jndn.encoding.WireFormat;
 import org.junit.After;
 import org.junit.Before;

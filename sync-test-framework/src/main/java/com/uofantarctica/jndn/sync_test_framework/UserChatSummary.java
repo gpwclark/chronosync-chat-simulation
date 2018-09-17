@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests.chat;
+package com.uofantarctica.jndn.sync_test_framework;
 
 public class UserChatSummary {
 

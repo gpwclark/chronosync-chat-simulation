@@ -24,7 +24,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId 'com.uofantarctica'
-            artifactId 'jndn.tests.app'
+            artifactId 'jndn.sync-test-framework'
             version '0.1'
 
             from components.java

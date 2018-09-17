@@ -1,6 +1,4 @@
-package com.uofantarctica.jndn.tests.chat;
-
-import com.uofantarctica.jndn.tests.sync.SyncQueue;
+package com.uofantarctica.jndn.sync_test_framework;
 
 public interface TestChat extends Chat {
 	void setTestContext(ChronoChatUser cu, int numMessages, int

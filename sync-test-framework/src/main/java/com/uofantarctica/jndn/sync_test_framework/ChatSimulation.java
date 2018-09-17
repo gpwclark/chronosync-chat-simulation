@@ -1,7 +1,7 @@
-package com.uofantarctica.jndn.tests.chat;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import com.uofantarctica.jndn.helpers.FaceSecurity;
-import com.uofantarctica.jndn.tests.sync.SyncQueue;
+import com.uofantarctica.jndn.sync_test_framework.SyncQueue;
 import com.uofantarctica.jndn.helpers.TransportConfiguration;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;

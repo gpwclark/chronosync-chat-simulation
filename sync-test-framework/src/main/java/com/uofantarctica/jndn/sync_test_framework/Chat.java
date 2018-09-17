@@ -1,6 +1,4 @@
-package com.uofantarctica.jndn.tests.chat;
-
-import net.named_data.jndn.Face;
+package com.uofantarctica.jndn.sync_test_framework;
 
 public interface Chat {
 	void recordMessageReceipt(String from, String msg);

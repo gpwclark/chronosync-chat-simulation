@@ -1,4 +1,4 @@
-package com.uofantarctica.jndn.tests.sync;
+package com.uofantarctica.jndn.sync_test_framework;
 
 import net.named_data.jndn.Data;
 
