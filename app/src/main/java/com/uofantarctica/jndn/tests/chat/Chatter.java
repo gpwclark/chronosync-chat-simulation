@@ -1,6 +1,6 @@
 package com.uofantarctica.jndn.tests.chat;
 
-import com.uofantarctica.jndn.tests.proto.ChatbufProto;
+import com.uofantarctica.jndn.proto.ChatbufProto;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.uofantarctica.jndn.tests.sync.Switches;
 import net.named_data.jndn.Data;

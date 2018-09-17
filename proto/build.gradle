@@ -34,6 +34,10 @@ idea {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            groupId 'com.uofantarctica'
+            artifactId 'jndn.proto'
+            version '0.1'
+
             from components.java
         }
     }

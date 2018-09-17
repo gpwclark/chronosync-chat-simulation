@@ -46,8 +46,7 @@ public class ChatSimulationTest {
 
 		String screenName = "scratchy";
 		String hubPrefix = "/ndn/broadcast/chat-room";
-		String defaultChatRoom = "ndnchat";
-		String chatRoom = defaultChatRoom;
+		String chatRoom = "ndnchat";
 		String broadcastBaseName = "/ndn/broadcast/sync-simulation-test";
 
 		ChatSimulationBuilder builder = ChatSimulationBuilder.aChatSimulation();
