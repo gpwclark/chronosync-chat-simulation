@@ -1,8 +1,6 @@
 rootProject.name = 'ndn-sync-chat-simulation'
 
-include 'app'
 include 'proto'
 include 'helpers'
-include 'jndn.sync-test-framework'
 include 'sync-test-framework'
 
