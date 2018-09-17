@@ -11,9 +11,7 @@ allprojects {
         javaSourceVersion = JavaVersion.VERSION_1_8
         javaTargetVersion = JavaVersion.VERSION_1_8
     }
-}
 
-subprojects {
     repositories {
         mavenLocal()
         maven { url "https://jitpack.io" }
@@ -21,10 +19,13 @@ subprojects {
         google()
         mavenCentral()
     }
-
-    //dependencies {
-        //implementation "org.xerial:sqlite-jdbc:3.8.7"
-     //   implementation "net.named-data:jndn:0.16"
-    //}
-
+    plugins.withType(JavaPlugin) {
+//TODO need to figure out how to keep proto from being built with the following.
+        dependencies {
+            compile "org.slf4j:slf4j-api:1.7.25"
+            compile "org.slf4j:slf4j-log4j12:1.7.25"
+            compile "org.xerial:sqlite-jdbc:3.8.7"
+            compile "net.named-data:jndn:0.16"
+        }
+    }
 }

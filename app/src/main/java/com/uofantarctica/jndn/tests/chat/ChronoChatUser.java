@@ -1,5 +1,6 @@
 package com.uofantarctica.jndn.tests.chat;
 
+import com.uofantarctica.jndn.helpers.FaceSecurity;
 import com.uofantarctica.jndn.tests.sync.SyncQueue;
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Interest;
@@ -32,13 +33,10 @@ public class ChronoChatUser implements Runnable {
 	protected int numMessages;
 	protected List<Interest> interestsExpressed;
 
-	public ChronoChatUser(int participantNo, int participants,
-	                      String broadcastBaseName,
-	                      String baseScreenName, String chatRoom, String
-			                      hubPrefix, Face face, KeyChain keyChain,
-	                      SyncQueue queue, Name
-			                      certificateName, int[]
-			                      messagesSentCountPerUser,
+	public ChronoChatUser(int participantNo, int participants, String broadcastBaseName,
+	                      String baseScreenName, String chatRoom, String hubPrefix,
+	                      Face face, FaceSecurity.SecurityData securityData,
+	                      SyncQueue queue, int[] messagesSentCountPerUser,
 	                      int numMessages, List<Interest> interestExpressed) {
 		this.participantNo = participantNo;
 		this.participants = participants;
@@ -48,9 +46,9 @@ public class ChronoChatUser implements Runnable {
 		this.chatRoom = chatRoom;
 		this.hubPrefix = hubPrefix;
 		this.face = face;
-		this.keyChain = keyChain;
+		this.keyChain = securityData.keyChain;
 		this.queue = queue;
-		this.certificateName = certificateName;
+		this.certificateName = securityData.certificateName;
 		this.messagesSentCountPerUser = messagesSentCountPerUser;
 		this.numMessages = numMessages;
 		this.interestsExpressed = interestExpressed;

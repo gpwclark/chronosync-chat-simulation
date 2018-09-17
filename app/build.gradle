@@ -12,7 +12,6 @@ tasks.withType(JavaCompile) {
 dependencies {
     compile project(':proto')
     compile project(':helpers')
-    implementation "net.named-data:jndn:0.16"
     implementation "com.uofantarctica:dsync:2.0.1"
     testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.29.1'
 }
